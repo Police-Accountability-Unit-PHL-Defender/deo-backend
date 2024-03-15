@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: deo-api
+    runtime: python
+    buildCommand: "poetry install"
+    startCommand: "poetry run python deo_backend/main.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.4
+      - key: POETRY_VERSION
+        value: 1.5.1
+      - key: PORT
+        value: 10000

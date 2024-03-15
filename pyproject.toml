@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "deo-backend"
+version = "0.1.0"
+description = ""
+authors = ["Stephen Suffian <stephen.suffian@pm.me>"]
+readme = "README.md"
+packages = [{ include = "deo_backend" }]
+
+[tool.poetry.dependencies]
+python = "=3.10.4"
+dash = "^2.14.0"
+dash-ag-grid = "^2.4.0"
+pandas = "^2.1.1"
+pydantic = "^2.4.2"
+statsmodels = "^0.14.1"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0.post1"
+
+
+[tool.poetry.group.dev.dependencies]
+httpx = "^0.25.0"
+tqdm = "^4.66.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
