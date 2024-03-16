@@ -276,8 +276,7 @@ def get_text_sentence_pct_deo(summary_data):
         1,
     )
     return f"""
-    traffic stops decreased by <span>{pct_decrease}%</span> from <span>{summary_data.num_stops_year_before_deo:,}</span> stops to <span>{summary_data.num_stops_year_after_deo:,}</span> stops, compared to to 2021 (see What is Driving Equality? to learn more about these date comparisons). Concerningly, racial disparities in traffic stops have persisted. 
-    """
+    traffic stops decreased by <span>{pct_decrease}%</span> from <span>{summary_data.num_stops_year_before_deo:,}</span> stops to <span>{summary_data.num_stops_year_after_deo:,}</span> stops"""
 
 
 def get_text_sentence_num_deo(summary_data):
@@ -330,7 +329,7 @@ def layout():
         ),
         html.Div(
             [
-                "In the last year, what were the racial disparities in traffic stops by Philadelphia police? How does the city population compare to who is stopped?",
+                "In the last year, what were the racial disparities in traffic stops by Philadelphia police? How does the city population compare to who was stopped?",
                 dcc.Graph(figure=summary_data.fig),
                 dcc.Markdown(
                     "When Philadelphia police intrude during traffic stops, they do not find any contraband most of the time. "
@@ -347,7 +346,8 @@ def layout():
                     "Driving Equality came into effect on March 3, 2022. In the year after Driving Equality, "
                     + get_text_sentence_pct_deo(summary_data)
                     .replace("<span>", "**")
-                    .replace("</span>", "**"),
+                    .replace("</span>", "**")
+                    + ", compared to 2021 (see What is Driving Equality? to learn more about these date comparisons). Concerningly, racial disparities in traffic stops have persisted."
                 ),
                 dcc.Graph(figure=summary_data.fig_deo_pct),
                 dcc.Markdown(

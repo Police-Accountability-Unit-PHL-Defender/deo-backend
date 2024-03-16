@@ -23,7 +23,6 @@ from models import Quarter
 from fastapi_models import Endpoint, location_annotation
 from dash_helpers import (
     location_dropdown,
-    qyear_dropdown,
     demographic_dropdown,
     Subtitle,
     TimeAggregationChoice,

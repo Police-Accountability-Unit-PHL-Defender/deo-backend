@@ -20,7 +20,7 @@ from models import GenderGroup
 from models import RacialGroup
 from models import Geography
 from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, FIRST_QUARTER
 from models import Quarter
 from models import QuarterHow
 from demographics.constants import (
@@ -52,16 +52,17 @@ LAYOUT = LAYOUT + [
         "Is traffic enforcement different in districts where most residents are white, compared to districts where most residents are people of color?  Comparing majority white districts to majority non-white districts, how many "
     ),
     police_action_dropdown(f"{prefix}-action-noun", word_type=ActionWordType.noun),
-    html.Span("did Philadelphia police make from the start of "),
-    qyear_dropdown(f"{prefix}-start-qyear", default="2023-Q1"),
+    html.Span("did Philadelphia police make from the start of quarter"),
+    qyear_dropdown(f"{prefix}-start-qyear", default=FIRST_QUARTER),
     html.Span(" through the end of "),
     qyear_dropdown(
         f"{prefix}-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
     ),
-    html.Span(
-        "? During this time period, what was the intrusion rate and contraband hit rate across districts?"
-    ),
+    html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
+    html.Span(
+        "During this time period, what was the intrusion rate and contraband hit rate across districts?"
+    ),
     dcc.Graph(id=f"{prefix}-graph2"),
     dcc.Graph(id=f"{prefix}-graph3"),
 ]
@@ -73,16 +74,16 @@ LAYOUT = LAYOUT + [
     Output(f"{prefix}-graph3", "figure"),
     Output(f"{prefix}-result-api", "href"),
     [
+        Input(f"{prefix}-action-noun", "value"),
         Input(f"{prefix}-start-qyear", "value"),
         Input(f"{prefix}-end-qyear", "value"),
-        Input(f"{prefix}-action-noun", "value"),
     ],
 )
 @router.get(API_URL)
 def api_func(
-    start_qyear: quarter_annotation,
-    end_qyear: quarter_annotation,
     police_action: Annotated[PoliceActionName, Query(description="Police Action")],
+    start_qyear: quarter_annotation = FIRST_QUARTER,
+    end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
     geo_filtered = FilteredDf(start_date=start_qyear, end_date=end_qyear)
@@ -165,13 +166,13 @@ def api_func(
     fig2 = _get_bar_fig(
         "intrusion_rate",
         title=f"PPD Intrusion Rate During Traffic Stops in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
-        labels={"intrusion_rate": "Intrusion Rate"},
+        labels={"intrusion_rate": "Intrusion Rate (%)"},
         hovertemplate_suffix="%{customdata[1]:,} intrusions<br>%{y}% intrusion rate",
     )
     fig3 = _get_bar_fig(
         "contraband_hit_rate",
         title=f"Contraband Hit Rate in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
-        labels={"contraband_hit_rate": "Contraband Hit Rate"},
+        labels={"contraband_hit_rate": "Contraband Hit Rate (%)"},
         hovertemplate_suffix="%{y}% contraband hit rate",
     )
     return endpoint.output(fig_barplot=fig, fig_barplot2=fig2, fig_barplot3=fig3)

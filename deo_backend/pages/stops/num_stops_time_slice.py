@@ -19,7 +19,12 @@ from models import GenderGroup
 from models import RacialGroup
 from models import Geography
 from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import (
+    QUARTERS,
+    MOST_RECENT_QUARTER,
+    SEASON_QUARTER_MAPPING,
+    FOUR_QUARTERS_AGO,
+)
 from models import Quarter
 from models import QuarterHow
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
@@ -45,8 +50,8 @@ LAYOUT = [
     html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api"),
     html.Span("In "),
     location_dropdown(f"{prefix}-location"),
-    html.Span(", from the start of "),
-    qyear_dropdown(f"{prefix}-q1-start-qyear", default="2021-Q2"),
+    html.Span(", from the start of quarter"),
+    qyear_dropdown(f"{prefix}-q1-start-qyear", default=FOUR_QUARTERS_AGO),
     html.Span(" through the end of "),
     qyear_dropdown(
         f"{prefix}-q1-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
@@ -69,8 +74,8 @@ LAYOUT = [
 )
 @router.get(API_URL)
 def stops__num_stops_time_slice(
-    start_qyear: quarter_annotation,
-    end_qyear: quarter_annotation,
+    start_qyear: quarter_annotation = FOUR_QUARTERS_AGO,
+    end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
     location: location_annotation = "*",
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())

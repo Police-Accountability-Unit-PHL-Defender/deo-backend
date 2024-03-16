@@ -1,7 +1,12 @@
 from dash import Dash, html, dcc, callback, Output, Input
 from typing import Annotated
 from fastapi import APIRouter, Query
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import (
+    QUARTERS,
+    MOST_RECENT_QUARTER,
+    SEASON_QUARTER_MAPPING,
+    FOUR_QUARTERS_AGO,
+)
 from models import QuarterHow
 from models import PoliceAction
 from models import AgeGroup
@@ -37,7 +42,7 @@ LAYOUT = [
             ),
             location_dropdown(f"{prefix}-location"),
             html.Span(" from the start of "),
-            qyear_dropdown(f"{prefix}-start-qyear", default="2023-Q1"),
+            qyear_dropdown(f"{prefix}-start-qyear", default=FOUR_QUARTERS_AGO),
             html.Span(" through the end of "),
             qyear_dropdown(
                 f"{prefix}-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
@@ -169,7 +174,7 @@ def q2_groups(
         ),
     ],
     location: location_annotation = "*",
-    start_qyear: quarter_annotation = "2023-Q1",
+    start_qyear: quarter_annotation = FOUR_QUARTERS_AGO,
     end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
@@ -207,7 +212,7 @@ def q2_groups(
     )
     fig = px.bar(
         df_groups,
-        title=f"Number of PPD {police_action.noun.title()} in {geo_filter.geography.string} from {geo_filter.date_range_str}, Comparing Group 1 to Group 2",
+        title=f"Number of PPD {police_action.noun.title()} in {geo_filter.geography.string}, Comparing Group 1 to Group 2, from {geo_filter.date_range_str}",
         x="season",
         y=police_action.sql_column,
         labels={
@@ -220,7 +225,9 @@ def q2_groups(
     )
     for trace in fig.data:
         trace.hovertemplate = (
-            "%{customdata[0]}<br>%{y:,} " + police_action.noun + "<extra></extra>"
+            "%{x}<br>%{customdata[0]}<br>%{y:,} "
+            + police_action.noun
+            + "<extra></extra>"
         )
     fig.update_traces(showlegend=False)
 

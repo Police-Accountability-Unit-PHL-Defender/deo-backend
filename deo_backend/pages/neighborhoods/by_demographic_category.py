@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import Dash, html, dcc, callback, Output, Input, no_update
 from models import QuarterHow
 import numpy as np
 import uuid
@@ -20,7 +20,7 @@ from models import GenderGroup
 from models import RacialGroup
 from models import Geography
 from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, FIRST_QUARTER
 from models import Quarter
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
 from dash_helpers import (
@@ -51,13 +51,13 @@ LAYOUT = LAYOUT + [
             demographic_dropdown(f"{prefix}-demographic-category"),
             html.Span(" in "),
             location_dropdown(f"{prefix}-location"),
-            html.Span(" from the start of "),
+            html.Span(" from the start of quarter"),
             qyear_dropdown(
-                f"{prefix}-start-qyear", default="2018-Q3", how=QuarterHow.start
+                f"{prefix}-start-qyear", default=FIRST_QUARTER, how=QuarterHow.start
             ),
             html.Span(" to the end of "),
             qyear_dropdown(
-                f"{prefix}-end-qyear", default="2019-Q3", how=QuarterHow.end
+                f"{prefix}-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
             ),
             html.Span(", compared to a baseline of people who are "),
             dcc.Dropdown(
@@ -102,10 +102,10 @@ def demo_dropdown_choice(demographic_category):
                 [{"label": dc.value, "value": dc.value} for dc in GenderGroup],
                 DemographicCategory.gender.default_value,
             ]
-        case DemographicCategory.age.value:
+        case DemographicCategory.age_range.value:
             return [
                 [{"label": dc.value, "value": dc.value} for dc in AgeGroup],
-                DemographicCategory.age.default_value,
+                DemographicCategory.age_range.default_value,
             ]
 
 
@@ -118,17 +118,15 @@ def demo_dropdown_choice(demographic_category):
         Output(f"{prefix}-result-api", "href"),
     ],
     [
-        Input(f"{prefix}-start-qyear", "value"),
-        Input(f"{prefix}-end-qyear", "value"),
         Input(f"{prefix}-demographic-category", "value"),
         Input(f"{prefix}-default", "value"),
         Input(f"{prefix}-location", "value"),
+        Input(f"{prefix}-start-qyear", "value"),
+        Input(f"{prefix}-end-qyear", "value"),
     ],
 )
 @router.get(API_URL)
 def api_func(
-    start_qyear: quarter_annotation,
-    end_qyear: quarter_annotation,
     demographic_category: Annotated[
         DemographicCategory, Query(description="Demographic Category")
     ],
@@ -136,6 +134,8 @@ def api_func(
         str, Query(description="Demographic baseline value")
     ],
     location: location_annotation = "*",
+    start_qyear: quarter_annotation = FIRST_QUARTER,
+    end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
     demographic_category = DemographicCategory(demographic_category)
@@ -156,6 +156,8 @@ def api_func(
         .to_frame("percentage")
         .round(1)
     )
+    if demographic_baseline not in df_percent_action_by_demo.index:
+        return no_update
 
     baseline_percentage = df_percent_action_by_demo.loc[demographic_baseline].values[0]
 
@@ -186,7 +188,7 @@ def api_func(
         y="percentage",
         barmode="group",
         labels={
-            "percentage": "Intrusion Rate",
+            "percentage": "Intrusion Rate (%)",
         },
         title=f"Intrusion Rates by {demographic_category} in {geo_level_str} from {geo_filtered.date_range_str}",
     )
@@ -196,12 +198,10 @@ def api_func(
     # Add text above each bar to show the percentage difference from the average
     for index, row in df_percent_action_by_demo.reset_index().iterrows():
         val_text = f"{np.abs(row['multiplier']):.1f}x"
-        if row["multiplier"] > 1:
-            text = f"{val_text} of {demographic_baseline} people"
-        elif row["multiplier"] < 1:
-            text = f"{val_text} of {demographic_baseline} people"
+        if row[demographic_category] == demographic_baseline:
+            text = "Baseline"
         else:
-            text = "(Baseline)"
+            text = f"{val_text} of Baseline"
 
         fig.add_annotation(
             text=text,
@@ -267,12 +267,10 @@ def api_func(
         demographic_category
     ).iterrows():
         val_text = f"{np.abs(row['not_found_count_multiplier']):.2f}x"
-        if row["not_found_count_multiplier"] > 1:
-            text = f"{val_text} of {demographic_baseline} people"
-        elif row["not_found_count_multiplier"] < 1:
-            text = f"{val_text} of {demographic_baseline} people"
+        if row[demographic_category] == demographic_baseline:
+            text = "Baseline"
         else:
-            text = "(Baseline)"
+            text = f"{val_text} of Baseline"
         fig2.add_annotation(
             x=row[demographic_category],
             y=row[f"{police_action.sql_column}_no_contraband"],
@@ -280,7 +278,6 @@ def api_func(
             showarrow=False,
             xanchor="center",
             yanchor="bottom",
-            font=dict(size=8),
             opacity=0.8,
         )
 
@@ -302,7 +299,7 @@ def api_func(
         df_percent_action_by_demo.sort_values(demographic_category),
         x=demographic_category.value,
         y="percentage_found",
-        labels={"percentage_found": "Contraband Hit Rate"},
+        labels={"percentage_found": "Contraband Hit Rate (%)"},
         title=f"Contraband Hit Rates by {demographic_category} in {geo_filtered.geography.string} from {geo_filtered.date_range_str}",
     )
     for trace in fig3.data:
@@ -313,12 +310,10 @@ def api_func(
         demographic_category
     ).iterrows():
         val_text = f"{np.abs(row['found_multiplier']):.2f}x"
-        if row["found_multiplier"] > 1:
-            text = f"{val_text} of {demographic_baseline} people"
-        elif row["found_multiplier"] < 1:
-            text = f"{val_text} of {demographic_baseline} people"
+        if row[demographic_category] == demographic_baseline:
+            text = "Baseline"
         else:
-            text = "(Baseline)"
+            text = f"{val_text} of Baseline"
         fig3.add_annotation(
             text=text,
             x=row[demographic_category],
@@ -345,7 +340,11 @@ def api_func(
     return endpoint.output(
         fig_barplot=fig,
         text_markdown=f"""
-            When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles in {geo_filtered.geography.string} from {geo_filtered.date_range_str_long}. During these intrusions, Philadelphia police did not find any contraband <span>{pct_not_found:.1f}%</span> of the time. 
+            In {geo_filtered.date_range_str_long}:
+
+            - When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles in {geo_filtered.geography.string} from {geo_filtered.date_range_str_long}.
+
+            - During these intrusions, Philadelphia police did not find any contraband <span>{pct_not_found:.1f}%</span> of the time.
         """,
         fig_barplot2=fig2,
         fig_barplot3=fig3,

@@ -25,7 +25,7 @@ from models import GenderGroup
 from models import RacialGroup
 from models import Geography
 from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, FIRST_QUARTER
 from models import Quarter
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
 from dash_helpers import (
@@ -51,10 +51,14 @@ LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
     html.Span("How does traffic enforcement compare in different districts? How many "),
     police_action_dropdown(f"{prefix}-action", word_type=ActionWordType.noun),
-    html.Span(" did Philadelphia police make from the start of "),
-    qyear_dropdown(f"{prefix}-start-qyear", how=QuarterHow.start, default="2018-Q3"),
+    html.Span(" did Philadelphia police make from the start of quarter"),
+    qyear_dropdown(
+        f"{prefix}-start-qyear", how=QuarterHow.start, default=FIRST_QUARTER
+    ),
     html.Span(" through the end of "),
-    qyear_dropdown(f"{prefix}-end-qyear", how=QuarterHow.end, default="2019-Q3"),
+    qyear_dropdown(
+        f"{prefix}-end-qyear", how=QuarterHow.end, default=MOST_RECENT_QUARTER
+    ),
     html.Span(" in these districts: "),
     dcc.Dropdown(
         placeholder="location",
@@ -75,20 +79,20 @@ LAYOUT = LAYOUT + [
     Output(f"{prefix}-graph", "figure"),
     Output(f"{prefix}-result-api", "href"),
     [
-        Input(f"{prefix}-start-qyear", "value"),
-        Input(f"{prefix}-end-qyear", "value"),
         Input(f"{prefix}-action", "value"),
         Input(f"{prefix}-compare-districts", "value"),
+        Input(f"{prefix}-start-qyear", "value"),
+        Input(f"{prefix}-end-qyear", "value"),
     ],
 )
 @router.get(API_URL)
 def api_func(
-    start_qyear: quarter_annotation,
-    end_qyear: quarter_annotation,
     police_action: Annotated[PoliceActionName, Query(description="Police Action")],
     districts: Annotated[
         list[str], Query(description="A set of districts to compare to each other")
     ],
+    start_qyear: quarter_annotation = FIRST_QUARTER,
+    end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
     police_action = PoliceAction.from_value(police_action)
