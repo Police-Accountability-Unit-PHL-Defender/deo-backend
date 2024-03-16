@@ -7,7 +7,12 @@ from models import AgeGroup
 from models import DemographicCategory
 from models import GenderGroup
 from models import RacialGroup
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import (
+    QUARTERS,
+    MOST_RECENT_QUARTER,
+    SEASON_QUARTER_MAPPING,
+    FOUR_QUARTERS_AGO,
+)
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
 from dash_helpers import (
     location_dropdown,
@@ -30,8 +35,8 @@ LAYOUT = LAYOUT + [
                 "Which demographic groups did Philadelphia police most frequently stop in "
             ),
             location_dropdown(f"{prefix}-location"),
-            html.Span(" from the start of "),
-            qyear_dropdown(f"{prefix}-start-qyear", default="2023-Q1"),
+            html.Span(" from the start of quarter"),
+            qyear_dropdown(f"{prefix}-start-qyear", default=FOUR_QUARTERS_AGO),
             html.Span(" through the end of "),
             qyear_dropdown(
                 f"{prefix}-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
@@ -62,7 +67,7 @@ LAYOUT = LAYOUT + [
 @router.get(API_URL)
 def stops__most_frequent_stops(
     location: location_annotation = "*",
-    start_qyear: quarter_annotation = "2023-Q1",
+    start_qyear: quarter_annotation = FOUR_QUARTERS_AGO,
     end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())

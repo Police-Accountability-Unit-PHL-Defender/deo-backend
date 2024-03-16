@@ -179,4 +179,5 @@ class Endpoint:
             "tables": tables,
             "geojson": geojson,
             "data": {k: convert(v) for k, v in data.items()} if data else {},
+            "inputs": self.inputs,
         }

@@ -26,6 +26,8 @@ ALL_QUARTERS = pd.date_range(
 )
 YEARS = list(range(ALL_QUARTERS[0].year, datetime.now().year))
 MOST_RECENT_QUARTER = f"{ALL_QUARTERS[-1].year}-Q{ALL_QUARTERS[-1].quarter}"
+FIRST_QUARTER = f"{ALL_QUARTERS[0].year}-Q{ALL_QUARTERS[0].quarter}"
+FOUR_QUARTERS_AGO = f"{ALL_QUARTERS[-4].year}-Q{ALL_QUARTERS[-4].quarter}"
 
 DIVISION_TO_DISTRICTS_MAPPING = {
     "SPD": ["01", "03", "17"],
@@ -166,7 +168,7 @@ class FilteredDf:
             case TimeAggregation.year:
                 return f"the start of {self.quarters.years[0]} through the end of {self.quarters.years[-1]}"
             case TimeAggregation.quarter:
-                return self.date_range_str
+                return self.date_range_str_long
 
     def get_date_range_str(self, time_aggregation: TimeAggregation):
         match time_aggregation:
@@ -358,9 +360,9 @@ class GenderGroup(str, Enum):
 
 
 class DemographicCategory(str, Enum):
+    race = "Race"
     gender = "Gender"
     age_range = "Age Range"
-    race = "Race"
 
     @property
     def order_of_group(self):
@@ -376,9 +378,9 @@ class DemographicCategory(str, Enum):
     def default_value(self):
         match self:
             case DemographicCategory.age_range:
-                return AgeGroup.less_than_twenty_five
+                return AgeGroup.thirty_five_to_fourty_four
             case DemographicCategory.gender:
-                return GenderGroup.male
+                return GenderGroup.female
             case DemographicCategory.race:
                 return RacialGroup.white
 

@@ -7,7 +7,13 @@ from dash_helpers import (
     TimeAggregationChoice,
 )
 from models import PoliceAction
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, QuarterHow
+from models import (
+    QUARTERS,
+    MOST_RECENT_QUARTER,
+    SEASON_QUARTER_MAPPING,
+    QuarterHow,
+    FOUR_QUARTERS_AGO,
+)
 from models import AgeGroup
 from models import DemographicCategory
 from models import GenderGroup
@@ -28,8 +34,8 @@ LAYOUT = LAYOUT + [
         [
             html.Span("How often did Philadelphia police stop people of different "),
             demographic_dropdown(f"{prefix}-demographic-category", plural=True),
-            html.Span(" from the start of "),
-            qyear_dropdown(f"{prefix}-start-qyear", default="2023-Q1"),
+            html.Span(" from the start of quarter"),
+            qyear_dropdown(f"{prefix}-start-qyear", default=FOUR_QUARTERS_AGO),
             html.Span(" to the end of "),
             qyear_dropdown(
                 f"{prefix}-end-qyear", default=MOST_RECENT_QUARTER, how=QuarterHow.end
@@ -50,17 +56,17 @@ LAYOUT = LAYOUT + [
     ],
     [
         Input(f"{prefix}-location", "value"),
+        Input(f"{prefix}-demographic-category", "value"),
         Input(f"{prefix}-start-qyear", "value"),
         Input(f"{prefix}-end-qyear", "value"),
-        Input(f"{prefix}-demographic-category", "value"),
     ],
 )
 @router.get(API_URL)
 def api_func(
     location: location_annotation,
-    start_qyear: quarter_annotation,
-    end_qyear: quarter_annotation,
     demographic_category,
+    start_qyear: quarter_annotation = FOUR_QUARTERS_AGO,
+    end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
     police_action = PoliceAction.stop.value
@@ -98,7 +104,7 @@ def api_func(
         labels={
             "percentage": "Percentage (%)",
         },
-        title=f"Percent of PPD {police_action.noun.title()} in {geo_filter.geography.string} from {geo_filter.date_range_str} by {demographic_category}",
+        title=f"Percent of PPD {police_action.noun.title()} in {geo_filter.geography.string}  by {demographic_category} from {geo_filter.date_range_str}",
         hover_data=[police_action.sql_column],
     )
     for trace in fig.data:

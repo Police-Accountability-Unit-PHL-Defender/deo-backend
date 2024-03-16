@@ -60,6 +60,9 @@ LAYOUT = LAYOUT + [
         "Driving Equality came into effect on March 3, 2022. In the year after Driving Equality, "
     ),
     html.Span(id=f"{prefix}-result-text"),
+    html.Span(
+        " compared to 2021 (see What is Driving Equality? to learn more about these date comparisons). However, in 2023, most traffic stops by the Philadelphia police still did not happen on the HIN."
+    ),
 ]
 
 
@@ -157,7 +160,7 @@ def api_func(
     ).round(1)
     return endpoint.output(
         text_sentence1=f"""
-        the proportion of traffic stops Philadelphia police made along the HIN increased by {pct_increase_on_hin_with_deo}% compared to the year before the law was implemented. However, in 2023, most traffic stops by the Philadelphia police still did not happen on the HIN. 
+        the proportion of traffic stops Philadelphia police made along the HIN increased by {pct_increase_on_hin_with_deo}%
         """,
         fig_barplot=fig1,
     )

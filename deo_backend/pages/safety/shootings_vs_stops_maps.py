@@ -51,7 +51,7 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 
 
-def shootings_vs_stops_map(start, end, title):
+def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
     df_shootings = df_shootings_raw()
     df_year_start = FilteredDf(start_date=start[0], end_date=start[1]).df
     df_year_start = df_year_start.merge(
@@ -82,13 +82,13 @@ def shootings_vs_stops_map(start, end, title):
     )
     df_pct_change = df_year_start_by_district.join(df_year_end_by_district)
 
-    df_pct_change["pct_change_stopped"] = (
+    df_pct_change["pct_change_n_stopped"] = (
         100
         * (df_pct_change["n_stopped_end"] - df_pct_change["n_stopped_start"])
         / df_pct_change["n_stopped_start"]
     )
 
-    df_pct_change["pct_change_shootings"] = (
+    df_pct_change["pct_change_n_shootings"] = (
         100
         * (df_pct_change["n_shootings_end"] - df_pct_change["n_shootings_start"])
         / df_pct_change["n_shootings_start"]
@@ -98,58 +98,54 @@ def shootings_vs_stops_map(start, end, title):
     ]  # District 77 is airport, has no shooting data
 
     # Adding a Rank Column
-    df_pct_change = df_pct_change.sort_values("pct_change_stopped", ascending=False)
-    df_pct_change["ranked_stop_increase"] = df_pct_change["pct_change_stopped"].rank(
-        method="min", ascending=False
+    df_pct_change = df_pct_change.sort_values(
+        f"pct_change_{increase_col}", ascending=False
     )
-    df_pct_change["ranked_stop_increase_str"] = df_pct_change[
-        "ranked_stop_increase"
-    ].apply(lambda x: f"{x:.0f}")
-    df_pct_change = df_pct_change.sort_values("pct_change_shootings", ascending=False)
-    df_pct_change["ranked_shooting_decrease"] = df_pct_change[
-        "pct_change_shootings"
+    df_pct_change[f"ranked_{increase_col}_increase"] = df_pct_change[
+        f"pct_change_{increase_col}"
+    ].rank(method="min", ascending=False)
+    df_pct_change = df_pct_change.sort_values(
+        f"pct_change_{decrease_col}", ascending=False
+    )
+    df_pct_change[f"ranked_{decrease_col}_decrease"] = df_pct_change[
+        f"pct_change_{decrease_col}"
     ].rank(method="max", ascending=True)
 
-    df_pct_change["ranked_shooting_decrease_str"] = df_pct_change[
-        "ranked_shooting_decrease"
-    ].apply(lambda x: f"{x:.0f}")
+    def _rank_str(x):
+        int_x = int(x)
+        last_digit = int(str(int_x)[-1])
+        match last_digit:
+            case 11, 12, 13:
+                suffix = "th"
+            case 1:
+                suffix = "st"
+            case 2:
+                suffix = "nd"
+            case 3:
+                suffix = "rd"
+            case _:
+                suffix = "th"
+        return f"{int_x}{suffix}"
 
-    df_pct_change = df_pct_change.reset_index()[
-        [
-            "districtoccur",
-            "pct_change_stopped",
-            "pct_change_shootings",
-            "ranked_stop_increase",
-            "ranked_shooting_decrease",
-            "ranked_stop_increase_str",
-            "ranked_shooting_decrease_str",
-        ]
-    ]
+    df_pct_change[f"ranked_{decrease_col}_decrease_str"] = df_pct_change[
+        f"ranked_{decrease_col}_decrease"
+    ].apply(_rank_str)
+    df_pct_change[f"ranked_{increase_col}_increase_str"] = df_pct_change[
+        f"ranked_{increase_col}_increase"
+    ].apply(_rank_str)
+
+    df_pct_change = df_pct_change.reset_index()
     n_dist = 5
-    most_stopped = df_pct_change.sort_values("pct_change_stopped", ascending=False)[
-        :n_dist
-    ]
-    least_shootings = df_pct_change.sort_values("pct_change_shootings", ascending=True)[
-        :n_dist
-    ]
-
-    colorscale_stops = [
-        [0, "rgba(0,255,0,0)"],  # Transparent
-        [1, "rgba(0,255,0,1)"],  # Green
-    ]
+    most_increased = df_pct_change.sort_values(
+        f"pct_change_{increase_col}", ascending=False
+    )[:n_dist]
+    most_decreased = df_pct_change.sort_values(
+        f"pct_change_{decrease_col}", ascending=True
+    )[:n_dist]
 
     # Define the magentas color scale
-    colorscale_shootings = [
-        [0, "rgba(255,0,255,0)"],  # Transparent
-        [1, "rgba(255,0,255,1)"],  # Magenta
-    ]
-    green_light = "#b7f7b4"  # Light green
-    green_dark = "#086e00"  # Dark green
     magenta_light = "#f2bbf2"  # Light magenta
     magenta_dark = "#94008a"  # Dark magenta
-
-    # Create a color scale for green from light to dark
-    colorscale_stops = [[0, green_light], [1, green_dark]]
 
     # Create a color scale for magenta from light to dark
     colorscale_shootings = [[0, magenta_light], [1, magenta_dark]]
@@ -158,6 +154,26 @@ def shootings_vs_stops_map(start, end, title):
     original_geojson = police_districts_geojson()
 
     features = []
+
+    def hovertext(row):
+        increase_str = row[f"ranked_{increase_col}_increase_str"]
+        decrease_str = row[f"ranked_{decrease_col}_decrease_str"]
+
+        def get_col_str(col):
+            match col:
+                case "n_stopped":
+                    return "traffic stops"
+                case "n_shootings":
+                    return "shootings"
+                case _:
+                    raise NotImplementedError(
+                        f"columns must be n_stopped or n_shootings but received: {col}"
+                    )
+
+        increase_col_str = get_col_str(increase_col)
+        decrease_col_str = get_col_str(decrease_col)
+        return f"<b>District {row['districtoccur']}<br><b>{increase_str} largest % increase in {increase_col_str}<br><b>{decrease_str} largest % decrease in {decrease_col_str}"
+
     for feature in original_geojson["features"]:
         dist_numc = feature["properties"]["DIST_NUMC"]
 
@@ -165,35 +181,31 @@ def shootings_vs_stops_map(start, end, title):
 
         if not rows.empty:
             row = rows.iloc[0]
-            is_top_5_shootings_decrease = bool(row["ranked_shooting_decrease"] <= 5)
-            is_top_5_stops_increase = bool(row["ranked_stop_increase"] <= 5)
+            is_top_5_decrease = bool(row[f"ranked_{decrease_col}_decrease"] <= 5)
+            is_top_5_increase = bool(row[f"ranked_{increase_col}_increase"] <= 5)
 
-            feature["properties"]["shooting_decrease"] = is_top_5_shootings_decrease
-            feature["properties"]["stops_increase"] = is_top_5_stops_increase
-            feature["properties"][
-                "hovertext"
-            ] = f"<b>District {row['districtoccur']}<br><b>Traffic stop increase: Ranked #{row['ranked_stop_increase_str']}<br><b>Shootings decrease: Ranked #{row['ranked_shooting_decrease_str']}"
-            if is_top_5_shootings_decrease or is_top_5_stops_increase:
+            feature["properties"][f"is_top_{decrease_col}_change"] = is_top_5_decrease
+            feature["properties"][f"is_top_{increase_col}_change"] = is_top_5_increase
+            feature["properties"]["hovertext"] = hovertext(row)
+            if is_top_5_decrease or is_top_5_increase:
                 features.append(feature)
     geojson = {"type": "FeatureCollection", "features": features}
 
-    shootings_stops = pd.concat([least_shootings, most_stopped])
-    hovertext = [
-        f"<b>District {row['districtoccur']}<br><b>Traffic stop increase: Ranked #{row['ranked_stop_increase_str']}<br><b>Shootings decrease: Ranked #{row['ranked_shooting_decrease_str']}"
-        for i, row in shootings_stops.iterrows()
-    ]
+    shootings_stops = pd.concat([most_decreased, most_increased])
+    hovertext = [hovertext(row) for i, row in shootings_stops.iterrows()]
     choropleth_mapbox_shootings = go.Choroplethmapbox(
         geojson=geojson,
         featureidkey="properties.DIST_NUMC",
         locations=shootings_stops["districtoccur"],
-        z=shootings_stops["ranked_shooting_decrease"]
-        * shootings_stops["ranked_stop_increase"],
+        z=shootings_stops[f"ranked_{decrease_col}_decrease"]
+        * shootings_stops[f"ranked_{increase_col}_increase"],
         colorscale=colorscale_shootings,
         marker_opacity=0.7,
         hovertemplate="%{text}<extra></extra>",
         text=hovertext,
     )
     # Create Mapbox figure
+    breakpoint()
 
     fig = go.Figure(choropleth_mapbox_shootings)
 
@@ -203,49 +215,71 @@ def shootings_vs_stops_map(start, end, title):
         mapbox_zoom=10,
         mapbox_center={"lat": 39.9526, "lon": -75.1652},
     )
-    return fig
+    return (
+        fig,
+        df_pct_change["n_stopped_start"].sum(),
+        df_pct_change["n_stopped_end"].sum(),
+    )
 
 
-YEAR_2018_vs_2019_title = "Comparing 2018 to 2019: Districts with Largest Increase in Traffic Stops vs. Districts with Largest Decrease in Shootings"
-DEO_TITLE = "Before and After Driving Equality: Districts with Largest Increase in Traffic Stops vs. Districts with Largest Decrease in Shootings"
+YEAR_2018_vs_2019_title = "Comparing 2018 to 2019: Districts with Largest % Increase in Traffic Stops vs. Districts with Largest % Decrease in Shootings"
+DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Increase in Traffic Stops vs. Districts with Largest % Decrease in Shootings"
+
+
+def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
+    stops_diff = n_stops_end - n_stops_start
+    pct_diff = stops_diff / n_stops_start * 100
+    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increase in traffic stops to the 5 districts with the largest percent decrease in shootings. This map attempts to see whether the districts with the largest percent increase in traffic stops also had the largest percent decrease in shootings. Here, only one district, the 18th district, had such an outcome, with the 2nd largest percent increase of traffic stops and the third largest percent decrease in shootings. """
 
 
 @router.get(API_URL)
 def api_func():
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    map_surge = shootings_vs_stops_map(
+    map_surge, n_surge_stops_start, n_surge_stops_end = shootings_vs_stops_map(
         start=("2018-01-01", "2018-12-31"),
         end=("2019-01-01", "2019-12-31"),
         title=YEAR_2018_vs_2019_title,
+        decrease_col="n_shootings",
+        increase_col="n_stopped",
     )
-    map_deo = shootings_vs_stops_map(
+    map_deo, n_deo_stops_start, n_deo_stops_end = shootings_vs_stops_map(
         start=("2021-01-01", "2021-12-31"),
         end=("2022-04-01", "2023-03-31"),
         title=DEO_TITLE,
+        decrease_col="n_stopped",
+        increase_col="n_shootings",
     )
     return endpoint.output(
         map_surge=map_surge,
         map_deo=map_deo,
+        text_sentence_surge=get_text_sentence_surge(
+            n_surge_stops_start, n_surge_stops_end
+        ),
     )
 
 
 def shootings_vs_stops_layout():
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    map_surge = shootings_vs_stops_map(
+    map_surge, n_surge_stops_start, n_surge_stops_end = shootings_vs_stops_map(
         start=("2018-01-01", "2018-12-31"),
         end=("2019-01-01", "2019-12-31"),
         title=YEAR_2018_vs_2019_title,
+        decrease_col="n_shootings",
+        increase_col="n_stopped",
     )
-    map_deo = shootings_vs_stops_map(
+    map_deo, n_deo_stops_start, n_deo_stops_end = shootings_vs_stops_map(
         start=("2021-01-01", "2021-12-31"),
         end=("2022-04-01", "2023-03-31"),
         title=DEO_TITLE,
+        decrease_col="n_stopped",
+        increase_col="n_shootings",
     )
     return [
         html.A("**API FOR THIS QUESTION**:", href=endpoint.full_api_route),
         html.Div(
             "During a surge in traffic stops from 2018 to 2019, which districts had the largest increase in traffic stops? Were these the same districts that had the largest decrease in shootings?"
         ),
+        dcc.Markdown(get_text_sentence_surge(n_surge_stops_start, n_surge_stops_end)),
         dcc.Graph(figure=map_surge),
         html.Div(
             "Comparing the year before Driving Equality to the year after the law was implemented, which districts had the largest increase in traffic stops? Were these the same districts that had the largest decrease in shootings?"

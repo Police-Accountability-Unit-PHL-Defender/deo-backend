@@ -24,7 +24,6 @@ from models import Quarter
 from fastapi_models import Endpoint, location_annotation
 from dash_helpers import (
     location_dropdown,
-    qyear_dropdown,
     demographic_dropdown,
     Subtitle,
     TimeAggregationChoice,
@@ -167,9 +166,11 @@ def api_func(
         text_full_data=f"From {geo_filter.get_date_range_str_long(time_aggregation)}, <span>{pct_total}%</span> of traffic stops involved an {police_action.single_noun}, and Philadelphia police made a total of <span>{num_total:,}</span> {police_action.noun}.",
         fig_barplot=fig,
         text_data_over_time=f"""
-            From the start of 2014 through the end of 2018, <span>{pct_2014_to_2018}%</span> of traffic stops involved an {police_action.single_noun}, and Philadelphia police made an average of <span>{value_2014_to_2018:,}</span> {police_action.noun} per month.
+        In {geo_level_str}:
 
-            During a surge in stops in 2019, <span>{pct_2019_surge}%</span> of traffic stops involved an {police_action.single_noun}, and Philadelphia police made an average of <span>{value_2019_surge:,}</span> {police_action.noun} per month.
+        - From the start of 2014 through the end of 2018, <span>{pct_2014_to_2018}%</span> of traffic stops involved an {police_action.single_noun}, and police made an average of <span>{value_2014_to_2018:,}</span> {police_action.noun} per month.
 
-            From the start of April 2020 through the end of March 2021 (pandemic), <span>{pct_covid}%</span> of traffic stops involved an {police_action.single_noun}, and Philadelphia police made an average of <span>{value_covid:,}</span> {police_action.noun} per month.""",
+        - During a surge in stops in 2019, <span>{pct_2019_surge}%</span> of traffic stops involved an {police_action.single_noun}, and police made an average of <span>{value_2019_surge:,}</span> {police_action.noun} per month.
+
+        - From the start of April 2020 through the end of March 2021 (pandemic), <span>{pct_covid}%</span> of traffic stops involved an {police_action.single_noun}, and police made an average of <span>{value_covid:,}</span> {police_action.noun} per month.""",
     )

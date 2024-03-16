@@ -46,7 +46,7 @@ LAYOUT = [
     html.Hr(),
     html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api"),
     html.Span(
-        "Does traffic enforcement change depending on the time of year? How many traffic stops do Philadelphia police make in certain times of year in "
+        "Does traffic enforcement change depending on the time of year? How many traffic stops did Philadelphia police make in certain times of year in "
     ),
     location_dropdown(f"{prefix}-location"),
     html.Span("?"),
