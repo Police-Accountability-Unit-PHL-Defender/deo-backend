@@ -205,7 +205,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
         text=hovertext,
     )
     # Create Mapbox figure
-    breakpoint()
 
     fig = go.Figure(choropleth_mapbox_shootings)
 
@@ -232,6 +231,10 @@ def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
     return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increase in traffic stops to the 5 districts with the largest percent decrease in shootings. This map attempts to see whether the districts with the largest percent increase in traffic stops also had the largest percent decrease in shootings. Here, only one district, the 18th district, had such an outcome, with the 2nd largest percent increase of traffic stops and the third largest percent decrease in shootings. """
 
 
+def get_text_sentence_deo(n_stops_start: int, n_stops_end: int):
+    return "Placeholder text..."
+
+
 @router.get(API_URL)
 def api_func():
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
@@ -255,6 +258,7 @@ def api_func():
         text_sentence_surge=get_text_sentence_surge(
             n_surge_stops_start, n_surge_stops_end
         ),
+        text_sentence_deo=get_text_sentence_deo(n_deo_stops_start, n_deo_stops_end),
     )
 
 
