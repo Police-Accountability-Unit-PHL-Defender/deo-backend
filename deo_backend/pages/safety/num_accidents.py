@@ -141,6 +141,8 @@ def api_func(
             time_aggregation: "Quarter" if time_aggregation == "quarter" else "Year",
         },
     )
+    fig1.update_yaxes(range=[0, 100])
+
     for trace in fig1.data:
         trace.hovertemplate = "%{x}<br>%{y:}% of traffic stops on HIN"
 
