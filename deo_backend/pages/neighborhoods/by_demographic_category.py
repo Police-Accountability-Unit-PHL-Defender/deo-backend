@@ -182,6 +182,18 @@ def api_func(
     )
     geo_level_str = geo_filtered.geography.string
 
+    def get_text_for_row(row, /, *, column):
+        val_text = f"{np.abs(row[column]):.1f}x"
+        if row[demographic_category] == demographic_baseline:
+            text = "Baseline"
+        elif pd.isna(row[column]):
+            text = "0.0x of Baseline"
+        elif np.isinf(row[column]):
+            text = "More than baseline"
+        else:
+            text = f"{val_text} of Baseline"
+        return text
+
     fig = px.bar(
         df_percent_action_by_demo,
         x=demographic_category.value,
@@ -203,6 +215,7 @@ def api_func(
         else:
             text = f"{val_text} of Baseline"
 
+        text = get_text_for_row(row, column="multiplier")
         fig.add_annotation(
             text=text,
             x=index,
@@ -271,6 +284,7 @@ def api_func(
             text = "Baseline"
         else:
             text = f"{val_text} of Baseline"
+        text = get_text_for_row(row, column="not_found_count_multiplier")
         fig2.add_annotation(
             x=row[demographic_category],
             y=row[f"{police_action.sql_column}_no_contraband"],
@@ -309,11 +323,7 @@ def api_func(
     for index, row in df_percent_action_by_demo.sort_values(
         demographic_category
     ).iterrows():
-        val_text = f"{np.abs(row['found_multiplier']):.2f}x"
-        if row[demographic_category] == demographic_baseline:
-            text = "Baseline"
-        else:
-            text = f"{val_text} of Baseline"
+        text = get_text_for_row(row, column="found_multiplier")
         fig3.add_annotation(
             text=text,
             x=row[demographic_category],
