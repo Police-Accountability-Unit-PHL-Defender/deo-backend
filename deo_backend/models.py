@@ -443,6 +443,8 @@ class Geography(BaseModel):
             return f"PSA {self.district}-{self.psa}"
         elif self.district is not None:
             return f"District {self.district}"
+        elif self.division is not None:
+            return f"Division {self.division}"
         else:
             return "Philadelphia"
 
