@@ -10,6 +10,6 @@ select sum(n_stopped) from car_ped_stops_quarterly where year <2024;
 
 # TO Register a new route
 
-1. You need to create a folder that is a copy from `_template`. In that folder is an `__init__` file which must define a `layout` variable as well as register the page. 
-2. You must also define the fastapi route in the routers.py dictionary 
+1. You need to create a folder that is a copy from `_template`. In that folder is an `__init__` file which must define a `layout` variable as well as register the page.
+2. You must also define the fastapi route in the routers.py dictionary
 3. You need to add the import to the top of `main_fastapi.py`
