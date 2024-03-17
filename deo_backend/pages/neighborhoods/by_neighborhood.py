@@ -167,7 +167,7 @@ def api_func(
         "intrusion_rate",
         title=f"PPD Intrusion Rate During Traffic Stops in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
         labels={"intrusion_rate": "Intrusion Rate (%)"},
-        hovertemplate_suffix="%{customdata[1]:,} intrusions<br>%{y}% intrusion rate",
+        hovertemplate_suffix="%{customdata[1]:,.0f} intrusions<br>%{y}% intrusion rate",
     )
     fig3 = _get_bar_fig(
         "contraband_hit_rate",
