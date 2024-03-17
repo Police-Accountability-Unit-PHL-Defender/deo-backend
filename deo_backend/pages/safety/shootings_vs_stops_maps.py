@@ -115,8 +115,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
         int_x = int(x)
         last_digit = int(str(int_x)[-1])
         match last_digit:
-            case 11, 12, 13:
-                suffix = "th"
             case 1:
                 suffix = "st"
             case 2:
@@ -125,6 +123,9 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
                 suffix = "rd"
             case _:
                 suffix = "th"
+
+        if int_x in (11, 12, 13):
+            suffix = "th"
         return f"{int_x}{suffix}"
 
     df_pct_change[f"ranked_{decrease_col}_decrease_str"] = df_pct_change[
@@ -157,6 +158,8 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
 
     def hovertext(row):
         increase_str = row[f"ranked_{increase_col}_increase_str"]
+        pct_change_for_increase = row[f"pct_change_{increase_col}"]
+        pct_change_for_decrease = row[f"pct_change_{decrease_col}"]
         decrease_str = row[f"ranked_{decrease_col}_decrease_str"]
 
         def get_col_str(col):
@@ -172,7 +175,7 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
 
         increase_col_str = get_col_str(increase_col)
         decrease_col_str = get_col_str(decrease_col)
-        return f"<b>District {row['districtoccur']}<br><b>{increase_str} largest % increase in {increase_col_str}<br><b>{decrease_str} largest % decrease in {decrease_col_str}"
+        return f"<b>District {row['districtoccur']}<br><b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}% change)<br><b>{decrease_str} largest % decrease in {decrease_col_str} ({pct_change_for_decrease:.1f}% change)"
 
     for feature in original_geojson["features"]:
         dist_numc = feature["properties"]["DIST_NUMC"]
