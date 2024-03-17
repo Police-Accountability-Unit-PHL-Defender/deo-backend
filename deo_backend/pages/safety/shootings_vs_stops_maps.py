@@ -44,6 +44,7 @@ import os
 from fastapi import APIRouter, Query
 from enum import auto, Enum
 from routers import ROUTERS
+from pydantic import BaseModel
 
 prefixes = __name__.split(".")[-2:]
 prefix = prefixes[0].replace("_", "-") + "-" + prefixes[1].replace("_", "-")
@@ -51,7 +52,56 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 
 
+class ChangeType(str, Enum):
+    decrease = "decrease"
+    increase = "increase"
+
+
+class MapColAttributes(BaseModel):
+    column: str
+    plural_noun: str
+    change_type: ChangeType
+
+    @classmethod
+    def from_column(cls, col: str, change_type: str):
+        match col:
+            case "n_stopped":
+                return cls.stopped(change_type=change_type)
+            case "n_shootings":
+                return cls.shootings(change_type=change_type)
+            case _:
+                raise NotImplementedError(
+                    f"columns must be n_stopped or n_shootings but received: {col}"
+                )
+
+    @property
+    def is_shootings(self):
+        return self.column == MapColAttributes.shootings(change_type="decrease").column
+
+    @property
+    def is_stopped(self):
+        return self.column == MapColAttributes.stopped(change_type="increase").column
+
+    @classmethod
+    def stopped(cls, change_type):
+        return cls(
+            column="n_stopped", plural_noun="traffic stops", change_type=change_type
+        )
+
+    @classmethod
+    def shootings(cls, change_type):
+        return cls(
+            column="n_shootings", plural_noun="shootings", change_type=change_type
+        )
+
+
 def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
+    decrease_col_obj = MapColAttributes.from_column(
+        decrease_col, change_type="decrease"
+    )
+    increase_col_obj = MapColAttributes.from_column(
+        increase_col, change_type="increase"
+    )
     df_shootings = df_shootings_raw()
     df_year_start = FilteredDf(start_date=start[0], end_date=start[1]).df
     df_year_start = df_year_start.merge(
@@ -99,57 +149,40 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
 
     # Adding a Rank Column
     df_pct_change = df_pct_change.sort_values(
-        f"pct_change_{increase_col}", ascending=False
+        f"pct_change_{increase_col_obj.column}", ascending=False
     )
-    df_pct_change[f"ranked_{increase_col}_increase"] = df_pct_change[
-        f"pct_change_{increase_col}"
+    df_pct_change[f"ranked_{increase_col_obj.column}_increase"] = df_pct_change[
+        f"pct_change_{increase_col_obj.column}"
     ].rank(method="min", ascending=False)
     df_pct_change = df_pct_change.sort_values(
-        f"pct_change_{decrease_col}", ascending=False
+        f"pct_change_{decrease_col_obj.column}", ascending=False
     )
-    df_pct_change[f"ranked_{decrease_col}_decrease"] = df_pct_change[
-        f"pct_change_{decrease_col}"
+    df_pct_change[f"ranked_{decrease_col_obj.column}_decrease"] = df_pct_change[
+        f"pct_change_{decrease_col_obj.column}"
     ].rank(method="max", ascending=True)
-
-    def _rank_str(x):
-        int_x = int(x)
-        last_digit = int(str(int_x)[-1])
-        match last_digit:
-            case 1:
-                suffix = "st"
-            case 2:
-                suffix = "nd"
-            case 3:
-                suffix = "rd"
-            case _:
-                suffix = "th"
-
-        if int_x in (11, 12, 13):
-            suffix = "th"
-        return f"{int_x}{suffix}"
-
-    df_pct_change[f"ranked_{decrease_col}_decrease_str"] = df_pct_change[
-        f"ranked_{decrease_col}_decrease"
-    ].apply(_rank_str)
-    df_pct_change[f"ranked_{increase_col}_increase_str"] = df_pct_change[
-        f"ranked_{increase_col}_increase"
-    ].apply(_rank_str)
+    df_pct_change["is_top_5_decrease"] = (
+        df_pct_change[f"ranked_{decrease_col_obj.column}_decrease"] <= 5
+    )
+    df_pct_change["is_top_5_increase"] = (
+        df_pct_change[f"ranked_{increase_col_obj.column}_increase"] <= 5
+    )
 
     df_pct_change = df_pct_change.reset_index()
     n_dist = 5
     most_increased = df_pct_change.sort_values(
-        f"pct_change_{increase_col}", ascending=False
+        f"pct_change_{increase_col_obj.column}", ascending=False
     )[:n_dist]
     most_decreased = df_pct_change.sort_values(
-        f"pct_change_{decrease_col}", ascending=True
+        f"pct_change_{decrease_col_obj.column}", ascending=True
     )[:n_dist]
 
     # Define the magentas color scale
-    magenta_light = "#f2bbf2"  # Light magenta
-    magenta_dark = "#94008a"  # Dark magenta
+    green = "#00ff00"
+    white = "#000000"
+    end = "#fed8b1"  # Dark magenta
 
     # Create a color scale for magenta from light to dark
-    colorscale_shootings = [[0, magenta_light], [1, magenta_dark]]
+    colorscale_shootings = [green, white, end]
     # Create Choroplethmapbox trace
 
     original_geojson = police_districts_geojson()
@@ -157,44 +190,76 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
     features = []
 
     def hovertext(row):
-        increase_str = row[f"ranked_{increase_col}_increase_str"]
-        pct_change_for_increase = row[f"pct_change_{increase_col}"]
-        pct_change_for_decrease = row[f"pct_change_{decrease_col}"]
-        decrease_str = row[f"ranked_{decrease_col}_decrease_str"]
+        is_top_5_decrease = row["is_top_5_decrease"]
+        is_top_5_increase = row["is_top_5_increase"]
 
-        def get_col_str(col):
-            match col:
-                case "n_stopped":
-                    return "traffic stops"
-                case "n_shootings":
-                    return "shootings"
+        def _rank_str(x):
+            int_x = int(x)
+            last_digit = int(str(int_x)[-1])
+            match last_digit:
+                case 1:
+                    suffix = "st"
+                case 2:
+                    suffix = "nd"
+                case 3:
+                    suffix = "rd"
                 case _:
-                    raise NotImplementedError(
-                        f"columns must be n_stopped or n_shootings but received: {col}"
-                    )
+                    suffix = "th"
 
-        increase_col_str = get_col_str(increase_col)
-        decrease_col_str = get_col_str(decrease_col)
-        return f"<b>District {row['districtoccur']}<br><b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}% change)<br><b>{decrease_str} largest % decrease in {decrease_col_str} ({pct_change_for_decrease:.1f}% change)"
+            if int_x in (11, 12, 13):
+                suffix = "th"
+            return f"{int_x}{suffix}"
 
-    for feature in original_geojson["features"]:
-        dist_numc = feature["properties"]["DIST_NUMC"]
+        shootings_obj = (
+            increase_col_obj if increase_col_obj.is_shootings else decrease_col_obj
+        )
+        stopped_obj = (
+            increase_col_obj if increase_col_obj.is_stopped else decrease_col_obj
+        )
+        increase_str = _rank_str(row[f"ranked_{increase_col_obj.column}_increase"])
+        decrease_str = _rank_str(row[f"ranked_{decrease_col_obj.column}_decrease"])
+        pct_change_for_increase = row[f"pct_change_{increase_col_obj.column}"]
+        pct_change_for_decrease = row[f"pct_change_{decrease_col_obj.column}"]
+        increase_col_str = increase_col_obj.plural_noun
+        decrease_col_str = decrease_col_obj.plural_noun
 
-        rows = df_pct_change[df_pct_change["districtoccur"] == dist_numc]
+        if is_top_5_decrease:
+            first_sentence = f"<b>{decrease_str} largest % decrease in {decrease_col_str} ({pct_change_for_decrease:.1f}%)"
+            pct_change_str = "decrease" if pct_change_for_increase < 0 else "increase"
+            second_sentence = f"<b>{abs(pct_change_for_increase):.1f}% {pct_change_str} in {increase_col_str}"
+        elif is_top_5_increase:
+            first_sentence = f"<b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}%)"
 
-        if not rows.empty:
-            row = rows.iloc[0]
-            is_top_5_decrease = bool(row[f"ranked_{decrease_col}_decrease"] <= 5)
-            is_top_5_increase = bool(row[f"ranked_{increase_col}_increase"] <= 5)
-
-            feature["properties"][f"is_top_{decrease_col}_change"] = is_top_5_decrease
-            feature["properties"][f"is_top_{increase_col}_change"] = is_top_5_increase
-            feature["properties"]["hovertext"] = hovertext(row)
-            if is_top_5_decrease or is_top_5_increase:
-                features.append(feature)
-    geojson = {"type": "FeatureCollection", "features": features}
+            pct_change_str = "decrease" if pct_change_for_decrease < 0 else "increase"
+            second_sentence = f"<b>{abs(pct_change_for_decrease):.1f}% {pct_change_str} in {decrease_col_str}"
+        return f"<b>District {row['districtoccur']}<br>" + "<br>".join(
+            [first_sentence, second_sentence]
+        )
 
     shootings_stops = pd.concat([most_decreased, most_increased])
+    for feature in original_geojson["features"]:
+        dist_numc = feature["properties"]["DIST_NUMC"]
+        rows = shootings_stops[shootings_stops["districtoccur"] == dist_numc]
+
+        if rows.empty:
+            continue
+
+        is_top_5_decrease = rows.iloc[0]["is_top_5_decrease"]
+        is_top_5_increase = rows.iloc[0]["is_top_5_increase"]
+
+        row = rows.iloc[0]
+        feature["properties"][
+            f"is_top_{decrease_col_obj.column}_change"
+        ] = is_top_5_decrease
+        feature["properties"][
+            f"is_top_{increase_col_obj.column}_change"
+        ] = is_top_5_increase
+        feature["properties"]["hovertext"] = hovertext(
+            row,
+        )
+        features.append(feature)
+    geojson = {"type": "FeatureCollection", "features": features}
+
     hovertext = [hovertext(row) for i, row in shootings_stops.iterrows()]
     choropleth_mapbox_shootings = go.Choroplethmapbox(
         geojson=geojson,
@@ -235,7 +300,9 @@ def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
 
 
 def get_text_sentence_deo(n_stops_start: int, n_stops_end: int):
-    return "Placeholder text..."
+    stops_diff = n_stops_end - n_stops_start
+    pct_diff = stops_diff / n_stops_start * 100
+    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decrease in traffic stops to the 5 districts with the largest percent increase in shootings. This map attempts to see whether the districts with the largest percent decrease in traffic stops also had the largest percent increase in shootings."
 
 
 @router.get(API_URL)
@@ -291,6 +358,7 @@ def shootings_vs_stops_layout():
         html.Div(
             "Comparing the year before Driving Equality to the year after the law was implemented, which districts had the largest increase in traffic stops? Were these the same districts that had the largest decrease in shootings?"
         ),
+        dcc.Markdown(get_text_sentence_deo(n_deo_stops_start, n_deo_stops_end)),
         dcc.Graph(figure=map_deo),
     ]
 
