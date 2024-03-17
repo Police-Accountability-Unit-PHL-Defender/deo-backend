@@ -350,9 +350,9 @@ def api_func(
     return endpoint.output(
         fig_barplot=fig,
         text_markdown=f"""
-            In {geo_filtered.date_range_str_long}:
+            In {geo_level_str}:
 
-            - When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles in {geo_filtered.geography.string} from {geo_filtered.date_range_str_long}.
+            - When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles from {geo_filtered.date_range_str_long}.
 
             - During these intrusions, Philadelphia police did not find any contraband <span>{pct_not_found:.1f}%</span> of the time.
         """,
