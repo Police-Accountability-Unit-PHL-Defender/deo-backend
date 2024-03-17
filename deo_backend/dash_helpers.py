@@ -65,6 +65,7 @@ def location_dropdown(html_id):
         placeholder="location",
         options=[
             {"label": "PSA 22-1", "value": "22-1"},
+            {"label": "PSA 19-2", "value": "19-2"},
             {"label": "PSA 9-1", "value": "09-1"},
             {"label": "District 22", "value": "22*"},
             {"label": "District 24", "value": "24*"},
