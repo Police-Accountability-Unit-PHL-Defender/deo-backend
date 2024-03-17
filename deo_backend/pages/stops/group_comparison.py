@@ -41,7 +41,7 @@ LAYOUT = [
                 "How many times did Philadelphia police stop one demographic group compared to another in "
             ),
             location_dropdown(f"{prefix}-location"),
-            html.Span(" from the start of "),
+            html.Span(" from the start of quarter "),
             qyear_dropdown(f"{prefix}-start-qyear", default=FOUR_QUARTERS_AGO),
             html.Span(" through the end of "),
             qyear_dropdown(
