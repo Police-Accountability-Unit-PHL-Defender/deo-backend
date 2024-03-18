@@ -137,11 +137,12 @@ def api_func(
     full_data_sentence = f"From {geo_filter.get_date_range_str_long(time_aggregation)}, Philadelphia police made a total of <span>{num_total:,}</span> {police_action.noun} in {geo_level_str}."
     data_over_time_sentences = f"""
     In {geo_level_str}:
-    - From the start of 2014 through the end of 2018, police made an average of <span>{value_2014_to_2018:,}</span> {police_action.noun} per month.
 
-    - During a surge in traffic stops in 2019, police made an average of <span>{value_2019_surge:,}</span> traffic stops per month.
+    From the start of 2014 through the end of 2018, police made an average of <span>{value_2014_to_2018:,}</span> {police_action.noun} per month.
 
-    - From the start of April 2020 through the end of March 2021 (pandemic), police made an average of <span>{value_covid:,}</span> {police_action.noun} per month.
+    During a surge in traffic stops in 2019, police made an average of <span>{value_2019_surge:,}</span> traffic stops per month.
+
+    From the start of April 2020 through the end of March 2021 (pandemic), police made an average of <span>{value_covid:,}</span> {police_action.noun} per month.
         """
 
     return endpoint.output(
