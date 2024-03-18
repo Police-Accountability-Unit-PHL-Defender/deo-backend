@@ -131,14 +131,19 @@ def api_func(
         * df_grouped["n_stopped_locatable_on_hin"]
         / df_grouped["n_stopped_locatable"]
     ).round(1)
+    df_grouped["x_label"] = (
+        df_grouped["quarter"].apply(Quarter.year_quarter_to_year_season)
+        if time_aggregation == "quarter"
+        else df_grouped["year"]
+    )
     fig1 = px.bar(
         df_grouped,
-        x=time_aggregation,
+        x="x_label",
         y="pct_in_hin",
         title=f"Percent of PPD Traffic Stops on the HIN in {geo_level_str} from {geo_filter.get_date_range_str(time_aggregation)}",
         labels={
             "pct_in_hin": "Percentage (%)",
-            time_aggregation: "Quarter" if time_aggregation == "quarter" else "Year",
+            "x_label": "Quarter" if time_aggregation == "quarter" else "Year",
         },
     )
     fig1.update_yaxes(range=[0, 100])
