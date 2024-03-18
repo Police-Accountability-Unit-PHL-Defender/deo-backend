@@ -210,12 +210,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
                 suffix = "th"
             return f"{int_x}{suffix}"
 
-        shootings_obj = (
-            increase_col_obj if increase_col_obj.is_shootings else decrease_col_obj
-        )
-        stopped_obj = (
-            increase_col_obj if increase_col_obj.is_stopped else decrease_col_obj
-        )
         increase_str = _rank_str(row[f"ranked_{increase_col_obj.column}_increase"])
         decrease_str = _rank_str(row[f"ranked_{decrease_col_obj.column}_decrease"])
         pct_change_for_increase = row[f"pct_change_{increase_col_obj.column}"]
@@ -244,8 +238,8 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
         if rows.empty:
             continue
 
-        is_top_5_decrease = rows.iloc[0]["is_top_5_decrease"]
-        is_top_5_increase = rows.iloc[0]["is_top_5_increase"]
+        is_top_5_decrease = bool(rows.iloc[0]["is_top_5_decrease"])
+        is_top_5_increase = bool(rows.iloc[0]["is_top_5_increase"])
 
         row = rows.iloc[0]
         feature["properties"][
