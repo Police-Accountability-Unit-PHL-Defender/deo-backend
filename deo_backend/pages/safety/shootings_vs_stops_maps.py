@@ -350,7 +350,7 @@ def shootings_vs_stops_layout():
         dcc.Markdown(get_text_sentence_surge(n_surge_stops_start, n_surge_stops_end)),
         dcc.Graph(figure=map_surge),
         html.Div(
-            "Comparing the year before Driving Equality to the year after the law was implemented, which districts had the largest increase in traffic stops? Were these the same districts that had the largest decrease in shootings?"
+            "Driving Equality came into effect on March 3, 2022. In the year afterⓘ Driving Equality, which districts had the largest percent decrease in traffic stops, compared to 2021? (See What is Driving Equality? to learn more about these date comparisons.) Were these the same districts that had the largest percent increase in shootings?"
         ),
         dcc.Markdown(get_text_sentence_deo(n_deo_stops_start, n_deo_stops_end)),
         dcc.Graph(figure=map_deo),
