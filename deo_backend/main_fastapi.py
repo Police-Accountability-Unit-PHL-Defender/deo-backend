@@ -14,7 +14,7 @@ from routers import ROUTERS
 
 origins = [
     "https://driving-equality.vercel.app",
-    "https://deo-web-dashboard.vercel.app/",
+    "https://deo-web-dashboard.vercel.app",
     "https://deo-fastapi.onrender.com",
     "https://deo-api.onrender.com",
     "http://localhost:10000",
