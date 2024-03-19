@@ -303,6 +303,8 @@ def api_func():
     summary_data = get_summary()
     return endpoint.output(
         fig_barplot=summary_data.fig,
+        fig_barplot2=summary_data.fig_deo_pct,
+        fig_barplot3=summary_data.fig_deo_total,
         text_sentence1=get_text_sentence_last_year(summary_data),
         text_sentence2=get_text_sentence_pct_deo(summary_data),
         text_sentence3=get_text_sentence_num_deo(summary_data),
