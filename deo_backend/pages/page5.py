@@ -34,8 +34,7 @@ select
 gender,
 districtoccur,
   race, mvc_code, count(*) as n_stopped,
-  sum(case WHEN mvc_reason like '%WARNING%' THEN 1 ELSE 0 END) as n_warned,
-  count(*)/ CAST(SUM(COUNT(*)) OVER (PARTITION BY mvc_code) as float) * 100 as pct_by_mvc_category,
+  count(*)/ CAST(SUM(COUNT(*)) OVER (PARTITION BY mvc_code) as float) * 100 as pct_by_violation_category,
   count(*)/ CAST(SUM(COUNT(*)) OVER (PARTITION BY race) as float) * 100 as pct_by_race,
   count(*)/ CAST(SUM(COUNT(*)) OVER (PARTITION BY districtoccur) as float) * 100 as pct_by_district
  from car_ped_stops  where mvc_code IN ('4524E1', '3112A31', '3323B', '4303B', '1301A', '4303A', '3111A', '3714')  and     
@@ -66,21 +65,10 @@ Q1_LAYOUT = [
         style={"textAlign": "center"},
     ),
     html.Span(
-        "When a reason was given, what is the racial breakdown for why police say they stopped people stopped in "
+        "When Philadelphia police provided a reason, what were the primary reasons why police stopped Black and white drivers in Philadelphia in "
     ),
     dcc.Dropdown(
-        placeholder="location",
         options=[
-            {"label": "Philly", "value": ""},
-        ],
-        value="",
-        id="p5-q1a-location",
-        style={"display": "inline-block", "width": "100px"},
-    ),
-    html.Span(" in "),
-    dcc.Dropdown(
-        options=[
-            {"label": 2021, "value": 2021},
             {"label": 2022, "value": 2022},
             {"label": 2023, "value": 2023},
         ],
@@ -106,11 +94,10 @@ Q1_LAYOUT = [
         Output("p5-q1-graph6", "figure"),
     ],
     [
-        Input("p5-q1a-location", "value"),
         Input("p5-q1a-year", "value"),
     ],
 )
-def q1a(location, year):
+def q1a(year):
     df_reasons = FilteredDf(
         start_date=datetime(year, 1, 1),
         end_date=datetime(year, 12, 31),
@@ -118,10 +105,12 @@ def q1a(location, year):
     ).df
     # df_reasons = df_raw_reasons().copy()
     # df_reasons = df_reasons[df_reasons["year"] == year]
-    df_reasons = df_reasons[df_reasons["mvc_category"] != "none"]
+    df_reasons = df_reasons[df_reasons["violation_category"] != "Other"]
 
     df_reasons_grouped = (
-        df_reasons.groupby(["Race", "mvc_category"])["n_stopped"].sum().reset_index()
+        df_reasons.groupby(["Race", "violation_category"])["n_stopped"]
+        .sum()
+        .reset_index()
     )
 
     def pct_stop_fig(df, col, val, col_text):
@@ -129,10 +118,10 @@ def q1a(location, year):
         df_filt["pct_stopped"] = 100 * df_filt["n_stopped"] / df_filt["n_stopped"].sum()
         fig = px.bar(
             df_filt,
-            x="mvc_category",
+            x="violation_category",
             y="pct_stopped",
             barmode="stack",
-            color="mvc_category",
+            color="violation_category",
         )
         fig.update_yaxes(title_text=f"% of Stops  where {col_text} was {val}")
         return fig
@@ -162,7 +151,7 @@ def q1a(location, year):
     ] = "Non-white"
 
     df_reasons_grouped_neighborhood = (
-        df_reasons.groupby(["mvc_category", "majority_district"])["n_stopped"]
+        df_reasons.groupby(["violation_category", "majority_district"])["n_stopped"]
         .sum()
         .reset_index()
     )
@@ -176,21 +165,20 @@ def q1a(location, year):
         "neighborhood",
     )
 
-    df_reasons["pct_warnings"] = df_reasons["n_warned"] / df_reasons["n_stopped"]
     return [
         fig2,
         fig3,
         fig4,
         fig5,
         px.bar(
-            df_reasons.groupby(["Race", "mvc_category"])
+            df_reasons.groupby(["Race", "violation_category"])
             .size()
             .rename("count")
             .reset_index(),
             x="Race",
             y="count",
             barmode="stack",
-            color="mvc_category",
+            color="violation_category",
         ),
     ]
 
