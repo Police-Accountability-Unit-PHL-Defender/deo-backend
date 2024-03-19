@@ -78,6 +78,9 @@ def hin_geojson():
     return json.load(open(os.path.join(DATA_DIR, "hin.geojson")))
 
 
+QUARTER_DT_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
 @lru_cache
 def df_raw():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
@@ -87,7 +90,7 @@ def df_raw():
         sqlite3.connect(sqlite_file),
     )
     df["quarter_dt"] = df.quarter_dt.apply(
-        lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
+        lambda x: datetime.strptime(x, QUARTER_DT_FORMAT)
     )
     return df
 
@@ -102,11 +105,11 @@ def df_raw_reasons():
         sqlite3.connect(sqlite_file),
     )
     df["quarter_dt"] = df.quarter_dt.apply(
-        lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
+        lambda x: datetime.strptime(x, QUARTER_DT_FORMAT)
     )
     df["n_warned_dangerous"] = df.apply(
         lambda x: x["n_warned"]
-        if x["mvc_category"] in ["red light", "stop sign", "careless driving"]
+        if x["violation_category"] in ["red light", "stop sign", "careless driving"]
         else 0,
         axis=1,
     )
