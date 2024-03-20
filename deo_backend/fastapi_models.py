@@ -79,20 +79,28 @@ class Endpoint:
         figures = {}
         texts = []
         tables = {}
-        geojson = {"type": "FeatureCollection", "features": []}
+        geojsons = []
         for map_key in [kw for kw in kwargs if kw.startswith("map_")]:
+            geojson = {
+                "type": "FeatureCollection",
+                "features": [],
+                "properties": {
+                    "title": kwargs[map_key].layout.title.text,
+                    "map_key": map_key,
+                },
+            }
             if kwargs[map_key].layout.mapbox.layers:
+                # Used by the HIN Map
                 geojson["features"].extend(
                     [feature.source for feature in kwargs[map_key].layout.mapbox.layers]
                 )
             if kwargs[map_key].data:
                 for map_data in kwargs[map_key].data:
                     if getattr(map_data, "geojson", None):
-                        geojson["properties"] = {
-                            "title": map_data.figure.layout.title.text
-                        }
+                        # Used by Comparison by District Maps
                         geojson["features"].extend(map_data.geojson["features"])
                     elif map_data.subplot == "mapbox":
+                        # Used by the HIN Plotly Points
                         geojson["features"].extend(
                             [
                                 {
@@ -108,6 +116,7 @@ class Endpoint:
                                 for lat, lon in zip(map_data["lat"], map_data["lon"])
                             ]
                         )
+                    geojsons.append(geojson)
         for fig_key in [kw for kw in kwargs if kw.startswith("fig_")]:
             fig_name = fig_key[len("fig_") :]
             fig = kwargs[fig_key]
@@ -180,7 +189,7 @@ class Endpoint:
             "text": texts,
             "figures": figures,
             "tables": tables,
-            "geojson": geojson,
+            "geojsons": geojsons,
             "data": {k: convert(v) for k, v in data.items()} if data else {},
             "inputs": self.inputs,
         }
