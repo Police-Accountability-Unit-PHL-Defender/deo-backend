@@ -190,9 +190,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
     features = []
 
     def hovertext(row):
-        is_top_5_decrease = row["is_top_5_decrease"]
-        is_top_5_increase = row["is_top_5_increase"]
-
         def _rank_str(x):
             int_x = int(x)
             last_digit = int(str(int_x)[-1])
@@ -210,12 +207,39 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
                 suffix = "th"
             return f"{int_x}{suffix}"
 
+        is_top_5_decrease = row["is_top_5_decrease"]
+        is_top_5_increase = row["is_top_5_increase"]
+
         increase_str = _rank_str(row[f"ranked_{increase_col_obj.column}_increase"])
         decrease_str = _rank_str(row[f"ranked_{decrease_col_obj.column}_decrease"])
         pct_change_for_increase = row[f"pct_change_{increase_col_obj.column}"]
         pct_change_for_decrease = row[f"pct_change_{decrease_col_obj.column}"]
         increase_col_str = increase_col_obj.plural_noun
         decrease_col_str = decrease_col_obj.plural_noun
+
+        pct_change_increase_str = (
+            "decrease" if pct_change_for_increase < 0 else "increase"
+        )
+        increase_sentence = f"<b>{abs(pct_change_for_increase):.1f}% {pct_change_increase_str} in {increase_col_str}"
+        pct_change_decrease_str = (
+            "decrease" if pct_change_for_decrease < 0 else "increase"
+        )
+        decrease_sentence = f"<b>{abs(pct_change_for_decrease):.1f}% {pct_change_decrease_str} in {decrease_col_str}"
+
+        if is_top_5_increase:
+            increase_sentence = increase_sentence + f" ({increase_str} largest)"
+        if is_top_5_decrease:
+            decrease_sentence = decrease_sentence + f" ({decrease_str} largest)"
+        first_sentence = (
+            increase_sentence if increase_col_obj.is_stopped else decrease_sentence
+        )
+        second_sentence = (
+            increase_sentence if increase_col_obj.is_shootings else decrease_sentence
+        )
+
+        """
+
+
 
         if is_top_5_decrease:
             first_sentence = f"<b>{decrease_str} largest % decrease in {decrease_col_str} ({pct_change_for_decrease:.1f}%)"
@@ -225,6 +249,7 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
             first_sentence = f"<b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}%)"
             pct_change_str = "decrease" if pct_change_for_decrease < 0 else "increase"
             second_sentence = f"<b>{abs(pct_change_for_decrease):.1f}% {pct_change_str} in {decrease_col_str}"
+        """
         return f"<b>District {row['districtoccur']}<br>" + "<br>".join(
             [first_sentence, second_sentence]
         )
@@ -282,20 +307,20 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
     )
 
 
-YEAR_2018_vs_2019_title = "Comparing 2018 to 2019: Districts with Largest % Increase in Traffic Stops vs. Districts with Largest % Decrease in Shootings"
+YEAR_2018_vs_2019_title = "Districts with Largest % Increases in Traffic Stops vs. Districts with Largest % Decreases in Shootings"
 DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Decreases in Traffic Stops vs. Districts with Largest % Increases in Shootings"
 
 
 def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increase in traffic stops to the 5 districts with the largest percent decrease in shootings. This map attempts to see whether the districts with the largest percent increase in traffic stops also had the largest percent decrease in shootings. Here, only one district, the 18th district, had such an outcome, with the 2nd largest percent increase of traffic stops and the third largest percent decrease in shootings. """
+    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increases in traffic stops to the 5 districts with the largest percent decreases in shootings. This map attempts to see whether the districts with the largest percent increases in traffic stops also had the largest percent decreases in shootings. Here, only one district, the 18th district, had such an outcome, with the 2nd largest percent increase of traffic stops and the third largest percent decrease in shootings. """
 
 
 def get_text_sentence_deo(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decrease in traffic stops to the 5 districts with the largest percent increase in shootings. This map attempts to see whether the districts with the largest percent decrease in traffic stops also had the largest percent increase in shootings."
+    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decreases in traffic stops to the 5 districts with the largest percent increases in shootings. This map attempts to see whether the districts with the largest percent decreases in traffic stops also had the largest percent increases in shootings."
 
 
 @router.get(API_URL)
@@ -344,12 +369,12 @@ def shootings_vs_stops_layout():
     return [
         html.A("**API FOR THIS QUESTION**:", href=endpoint.full_api_route),
         html.Div(
-            "During a surge in traffic stops from 2018 to 2019, which districts had the largest increase in traffic stops? Were these the same districts that had the largest decrease in shootings?"
+            "During a surge in traffic stops from 2018 to 2019, which districts had the largest increases in traffic stops? Were these the same districts that had the largest decreases in shootings?"
         ),
         dcc.Markdown(get_text_sentence_surge(n_surge_stops_start, n_surge_stops_end)),
         dcc.Graph(figure=map_surge),
         html.Div(
-            "Driving Equality came into effect on March 3, 2022. In the year afterⓘ Driving Equality, which districts had the largest percent decrease in traffic stops, compared to 2021? (See What is Driving Equality? to learn more about these date comparisons.) Were these the same districts that had the largest percent increase in shootings?"
+            "Driving Equality came into effect on March 3, 2022. In the year after Driving Equality, which districts had the largest percent decreases in traffic stops, compared to 2021? (See What is Driving Equality? to learn more about these date comparisons.) Were these the same districts that had the largest percent increases in shootings?"
         ),
         dcc.Markdown(get_text_sentence_deo(n_deo_stops_start, n_deo_stops_end)),
         dcc.Graph(figure=map_deo),
