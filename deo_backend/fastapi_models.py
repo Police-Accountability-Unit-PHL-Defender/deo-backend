@@ -88,6 +88,9 @@ class Endpoint:
             if kwargs[map_key].data:
                 for map_data in kwargs[map_key].data:
                     if getattr(map_data, "geojson", None):
+                        geojson["properties"] = {
+                            "title": map_data.figure.layout.title.text
+                        }
                         geojson["features"].extend(map_data.geojson["features"])
                     elif map_data.subplot == "mapbox":
                         geojson["features"].extend(

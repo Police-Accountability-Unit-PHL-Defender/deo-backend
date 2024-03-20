@@ -103,7 +103,6 @@ def stops__seasonal(
                 "districtoccur",
                 "psa",
                 "year",
-                "quarter_dt",
                 "quarter",
                 "q_str",
             ]

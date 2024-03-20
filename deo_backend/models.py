@@ -69,16 +69,29 @@ def police_districts_geojson():
 @lru_cache
 def hin_sample_locations_df():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
-    return pd.read_csv(os.path.join(DATA_DIR, "hin_random_sample_1000.csv"))
+    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
+    df = pd.read_sql(
+        "select * from hin_random_sample",
+        sqlite3.connect(sqlite_file),
+    )
+    return df
+
+
+@lru_cache
+def df_raw_by_hin():
+    DATA_DIR = os.path.dirname(deo_backend.__file__)
+    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
+    df = pd.read_sql(
+        "select * from car_ped_stops_hin_pct",
+        sqlite3.connect(sqlite_file),
+    )
+    return df
 
 
 @lru_cache
 def hin_geojson():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     return json.load(open(os.path.join(DATA_DIR, "hin.geojson")))
-
-
-QUARTER_DT_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 @lru_cache
@@ -88,9 +101,6 @@ def df_raw():
     df = pd.read_sql(
         "select * from car_ped_stops_quarterly",
         sqlite3.connect(sqlite_file),
-    )
-    df["quarter_dt"] = df.quarter_dt.apply(
-        lambda x: datetime.strptime(x, QUARTER_DT_FORMAT)
     )
     return df
 
@@ -104,21 +114,18 @@ def df_raw_reasons():
         "select * from car_ped_stops_quarterly_reason",
         sqlite3.connect(sqlite_file),
     )
-    df["quarter_dt"] = df.quarter_dt.apply(
-        lambda x: datetime.strptime(x, QUARTER_DT_FORMAT)
-    )
-    df["n_warned_dangerous"] = df.apply(
-        lambda x: x["n_warned"]
-        if x["violation_category"] in ["red light", "stop sign", "careless driving"]
-        else 0,
-        axis=1,
-    )
     return df
 
 
 class TimeAggregation(str, Enum):
     quarter = "quarter"
     year = "year"
+
+
+class DfType(str, Enum):
+    stops = "stops"
+    stops_by_reason = "stops_by_reason"
+    stops_by_hin = "stops_by_hin"
 
 
 class FilteredDf:
@@ -129,12 +136,19 @@ class FilteredDf:
         location: str = "*",
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-        include_reasons: bool = False,
+        df_type: DfType = DfType.stops,
     ):
         self.location = location
         self.start_date = start_date
         self.end_date = end_date
-        self.df = df_raw_reasons() if include_reasons else df_raw()
+        match df_type:
+            case DfType.stops:
+                self.df = df_raw()
+            case DfType.stops_by_reason:
+                self.df = df_raw_reasons()
+            case DfType.stops_by_hin:
+                self.df = df_raw_by_hin()
+
         # Location Filtering
         if location == "":
             raise NotImplementedError("If looking for city-wide, replace with '*'")

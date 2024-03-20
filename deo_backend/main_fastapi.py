@@ -9,6 +9,7 @@ import pages.snapshot  # required before `from routers import ROUTERS` to load t
 import pages.stops  # required before `from routers import ROUTERS` to load the routes
 import pages.neighborhoods  # required before `from routers import ROUTERS` to load the routes
 import pages.safety
+import pages.reasons  # required before `from routers import ROUTERS` to load the routes
 from routers import ROUTERS
 
 
