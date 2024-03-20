@@ -10,6 +10,7 @@ from dash_helpers import (
 from .comparison_bar_drivers import LAYOUT as COMPARISON_BAR_DRIVERS_LAYOUT
 from .comparison_bar_neighborhoods import LAYOUT as COMPARISON_BAR_NEIGHBORHOODS_LAYOUT
 from .deo_impacts import LAYOUT as DEO_IMPACTS_LAYOUT
+from .operational import LAYOUT as OPERATIONAL_LAYOUT
 
 PAGE_TITLE = "Do police make traffic stops for safety reasons?"
 # SUBTITLE_1 = Subtitle(name="How many traffic stops do police make?")
@@ -28,4 +29,5 @@ layout = html.Div(
     + COMPARISON_BAR_DRIVERS_LAYOUT
     + COMPARISON_BAR_NEIGHBORHOODS_LAYOUT
     + DEO_IMPACTS_LAYOUT
+    + OPERATIONAL_LAYOUT
 )
