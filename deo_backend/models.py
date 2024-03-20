@@ -51,7 +51,7 @@ def english_comma_separated(lst):
 def df_shootings_raw():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file}")
+    print(f"SQLITE: {sqlite_file} shootings")
     return pd.read_sql(
         "select * from shootings",
         sqlite3.connect(sqlite_file),
@@ -70,6 +70,7 @@ def police_districts_geojson():
 def hin_sample_locations_df():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
+    print(f"SQLITE: {sqlite_file} hin sample locations")
     df = pd.read_sql(
         "select * from hin_random_sample",
         sqlite3.connect(sqlite_file),
@@ -81,6 +82,7 @@ def hin_sample_locations_df():
 def df_raw_by_hin():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
+    print(f"SQLITE: {sqlite_file} raw by hin")
     df = pd.read_sql(
         "select * from car_ped_stops_hin_pct",
         sqlite3.connect(sqlite_file),
@@ -91,6 +93,7 @@ def df_raw_by_hin():
 @lru_cache
 def hin_geojson():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
+    print("Loading hin geojson")
     return json.load(open(os.path.join(DATA_DIR, "hin.geojson")))
 
 
@@ -98,6 +101,7 @@ def hin_geojson():
 def df_raw():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
+    print(f"SQLITE: {sqlite_file} raw")
     df = pd.read_sql(
         "select * from car_ped_stops_quarterly",
         sqlite3.connect(sqlite_file),
@@ -109,7 +113,7 @@ def df_raw():
 def df_raw_reasons():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file}")
+    print(f"SQLITE: {sqlite_file} raw reasons")
     df = pd.read_sql(
         "select * from car_ped_stops_quarterly_reason",
         sqlite3.connect(sqlite_file),

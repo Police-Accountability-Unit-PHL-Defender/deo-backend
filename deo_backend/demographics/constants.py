@@ -35,3 +35,13 @@ DEMOGRAPHICS_TOTAL[RacialGroup.latino.value] = DEMOGRAPHICS_TOTAL.pop(
 DEMOGRAPHICS_TOTAL[RacialGroup.other_race.value] = DEMOGRAPHICS_TOTAL.pop(
     "american_indian"
 ) + DEMOGRAPHICS_TOTAL.pop("unknown")
+
+# By neighborhood
+whiteness_of_districts = (
+    DEMOGRAPHICS_DISTRICT["white"] / DEMOGRAPHICS_DISTRICT["total"]
+).sort_values()
+districts_by_nonwhiteness = whiteness_of_districts.index
+MAJORITY_WHITE_DISTRICTS = whiteness_of_districts[whiteness_of_districts > 0.5].index
+MAJORITY_NONWHITE_DISTRICTS = whiteness_of_districts[
+    whiteness_of_districts <= 0.5
+].index

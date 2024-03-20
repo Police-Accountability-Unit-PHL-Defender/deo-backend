@@ -96,7 +96,7 @@ def api_func(
         end_date=datetime(year, 12, 31),
         df_type=DfType.stops_by_reason,
     ).df
-    df_reasons = df_reasons[df_reasons["violation_category"] != "Other"]
+    df_reasons = df_reasons[~df_reasons["violation_category"].isin(["Other", "None"])]
 
     df_reasons_grouped = (
         df_reasons.groupby(["Race", "violation_category"])["n_stopped"]
