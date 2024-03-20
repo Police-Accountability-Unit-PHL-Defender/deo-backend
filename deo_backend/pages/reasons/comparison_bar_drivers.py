@@ -130,9 +130,9 @@ def api_func(
     )
     for trace in fig.data:
         if trace["legendgroup"] == "Black drivers":
-            trace.hovertemplate = "Black drivers<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+            trace.hovertemplate = "Black<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
         if trace["legendgroup"] == "White drivers":
-            trace.hovertemplate = "White drivers<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+            trace.hovertemplate = "White<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
 
     return endpoint.output(
         fig_barplot=fig,
