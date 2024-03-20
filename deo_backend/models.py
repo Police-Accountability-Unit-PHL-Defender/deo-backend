@@ -475,3 +475,15 @@ before_deo_filter = FilteredDf(
 after_deo_filter = FilteredDf(
     location="*", start_date="2022-04-01", end_date="2023-03-31"
 )
+before_deo_filter_hin = FilteredDf(
+    location="*",
+    start_date="2021-01-01",
+    end_date="2021-12-31",
+    df_type=DfType.stops_by_hin,
+)
+after_deo_filter_hin = FilteredDf(
+    location="*",
+    start_date="2022-04-01",
+    end_date="2023-03-31",
+    df_type=DfType.stops_by_hin,
+)

@@ -12,7 +12,7 @@ import pandas as pd
 import sqlite3
 
 from models import PoliceAction
-from models import before_deo_filter, after_deo_filter
+from models import before_deo_filter_hin, after_deo_filter_hin
 from models import PoliceActionName
 from models import DfType
 from demographics.constants import (
@@ -139,12 +139,12 @@ def api_func(
 
     # Comparing Before vs After DEO
     before_deo_ratio_on_hin = (
-        before_deo_filter.df["n_stopped_locatable_on_hin"].sum()
-        / before_deo_filter.df["n_stopped_locatable"].sum()
+        before_deo_filter_hin.df["n_stopped_locatable_on_hin"].sum()
+        / before_deo_filter_hin.df["n_stopped_locatable"].sum()
     )
     after_deo_ratio_on_hin = (
-        after_deo_filter.df["n_stopped_locatable_on_hin"].sum()
-        / after_deo_filter.df["n_stopped_locatable"].sum()
+        after_deo_filter_hin.df["n_stopped_locatable_on_hin"].sum()
+        / after_deo_filter_hin.df["n_stopped_locatable"].sum()
     )
     pct_increase_on_hin_with_deo = (
         100
