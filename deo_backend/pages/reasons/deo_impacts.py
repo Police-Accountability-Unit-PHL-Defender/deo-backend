@@ -13,6 +13,7 @@ import pandas as pd
 import sqlite3
 
 from models import PoliceAction
+from models import VIOLATION_CATEGORIES_DEO_IMPACTED
 from models import TimeAggregation
 from models import PoliceActionName
 from models import DfType
@@ -82,7 +83,9 @@ def api_func(
     df_reasons = geo_filter.df
     geo_level_str = geo_filter.geography.string
     # Boolean in SQLITE
-    df_reasons = df_reasons[df_reasons["violation_is_deo_impacted"].astype(int) == 1]
+    df_reasons = df_reasons[
+        df_reasons["violation_category"].isin(VIOLATION_CATEGORIES_DEO_IMPACTED)
+    ]
     df_grouped = (
         df_reasons.groupby([time_aggregation, "violation_category"])[
             [police_action.sql_column]
@@ -96,7 +99,9 @@ def api_func(
         else df_grouped["year"]
     )
     fig = px.bar(
-        df_grouped.sort_values(police_action.sql_column, ascending=False),
+        df_grouped.sort_values(
+            [time_aggregation, police_action.sql_column], ascending=[True, False]
+        ),
         x="x_label",
         y=police_action.sql_column,
         title=f"Number of PPD {police_action.noun.title()} in {geo_level_str} from {geo_filter.get_date_range_str(time_aggregation)}",

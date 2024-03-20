@@ -1,5 +1,6 @@
 from models import QUARTERS, QuarterHow, TimeAggregation
 from models import PoliceAction
+from models import DEO_YEARS
 from enum import auto
 from enum import Enum
 from models import DemographicCategory
@@ -85,6 +86,16 @@ def qyear_dropdown(html_id, /, *, default, how: QuarterHow = QuarterHow.start):
             {"label": v.month_and_year(how), "value": v.quarter_and_year}
             for v in QUARTERS.values
         ],
+        value=default,
+        id=html_id,
+        style={"display": "inline-block", "width": "150px"},
+    )
+
+
+def deo_year_dropdown(html_id, /, *, default=2022):
+    return dcc.Dropdown(
+        placeholder="quarter-year",
+        options=[{"label": v, "value": v} for v in DEO_YEARS],
         value=default,
         id=html_id,
         style={"display": "inline-block", "width": "150px"},

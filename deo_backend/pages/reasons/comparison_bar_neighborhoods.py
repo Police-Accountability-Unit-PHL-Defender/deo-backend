@@ -30,6 +30,7 @@ from models import Quarter
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
 from dash_helpers import (
     location_dropdown,
+    deo_year_dropdown,
     qyear_dropdown,
     demographic_dropdown,
     Subtitle,
@@ -52,15 +53,7 @@ LAYOUT = LAYOUT + [
     html.Span(
         "When Philadelphia police provided a reason, what were the primary reasons why police stopped White and Non-white neighborhoods in Philadelphia in "
     ),
-    dcc.Dropdown(
-        options=[
-            {"label": 2022, "value": 2022},
-            {"label": 2023, "value": 2023},
-        ],
-        value=2022,
-        id=f"{prefix}-year",
-        style={"display": "inline-block", "width": "150px"},
-    ),
+    deo_year_dropdown(f"{prefix}-year"),
     html.Span(" sorted by "),
     dcc.Dropdown(
         options=[
@@ -105,10 +98,6 @@ def api_func(
         .sum()
         .reset_index()
     )
-
-    def pct_stop_fig(df, col, vals, col_text):
-        # B comes before W so to make sort by Black stops, then ascending needs to be True
-        return fig
 
     df_reasons.loc[
         df_reasons[df_reasons["districtoccur"].isin(MAJORITY_WHITE_DISTRICTS)].index,
