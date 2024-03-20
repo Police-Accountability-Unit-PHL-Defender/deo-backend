@@ -5,4 +5,5 @@ ROUTERS = {
     "snapshot": APIRouter(tags=["Snapshot"]),
     "neighborhoods": APIRouter(tags=["Neighborhoods"]),
     "safety": APIRouter(tags=["Safety"]),
+    "reasons": APIRouter(tags=["Reasons"]),
 }

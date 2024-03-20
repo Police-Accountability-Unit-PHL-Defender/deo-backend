@@ -28,6 +28,7 @@ def make_request(sql: str):
         response = client.post("https://phl.carto.com/api/v2/sql", data={"q": sql})
         try:
             json = response.json()
+            breakpoint()
         except Exception:
             raise ValueError(response.text)
         if "rows" not in json:
@@ -92,6 +93,7 @@ def download_geographies():
 
 if __name__ == "__main__":
     # Download the random sampling of stops based on how they are on the HIN
+    make_request("select * from car_ped_stops limit 1")
     response_hin = make_request(
         f"""
                 SELECT stops.*, hin.street_name is not null as on_hin FROM
@@ -162,8 +164,8 @@ if __name__ == "__main__":
             else "districtoccur is null"
         )
         return f"""
-        SELECT stop.*, driver.race, driver.age_range, driver.gender,
-        datetimeoccur_utc at time zone 'America/New_York' as datetimeoccur
+        SELECT stop.*, driver.race, driver.age_range, driver.gender, 
+        datetimeoccur_utc as datetimeoccur -- TODO FIX TO LOCAL TZ
         FROM
          (
             SELECT datetimeoccur as datetimeoccur_d,location as location_d,gender,
@@ -184,7 +186,59 @@ if __name__ == "__main__":
                 WHEN age <55 THEN '45-54'
                 WHEN age < 65 THEN '55-64'
                 ELSE '65+'
-            END as age_range
+            END as age_range,
+            CASE
+                WHEN (mvc_code_clean LIKE '1301%' AND mvc_code_clean NOT LIKE '%A%') OR
+                     (mvc_code_clean LIKE '1332%' AND mvc_code_clean NOT LIKE '%A%' AND mvc_code_clean NOT LIKE '1332AI%') 
+                THEN 'Display License Plate'
+                WHEN (mvc_code_clean IN ('3111')) OR
+                     (mvc_code_clean LIKE '3111%' AND mvc_code_clean NOT LIKE '%A%') OR
+                     (mvc_code_clean LIKE '3112%') 
+                THEN 'Failure to Obey Traffic Sign/Light'
+                WHEN (mvc_code_clean LIKE '330%') OR
+                     (mvc_code_clean LIKE '3311%' AND mvc_code_clean NOT LIKE '%A%') OR
+                     (mvc_code_clean LIKE '3313%') OR
+                     (mvc_code_clean LIKE '3315%') OR
+                     (mvc_code_clean LIKE '3703%') 
+                THEN 'Improper Pass, Lane, One Way'
+                WHEN (mvc_code_clean LIKE '3321%') OR
+                     (mvc_code_clean LIKE '3322%') OR
+                     (mvc_code_clean LIKE '3323%') OR
+                     (mvc_code_clean LIKE '3324%') OR
+                     (mvc_code_clean LIKE '3325%') OR
+                     (mvc_code_clean LIKE '3542%') OR
+                     (mvc_code_clean LIKE '3710%') OR
+                     ((mvc_code_clean LIKE '3342%' AND mvc_code_clean LIKE '%A%') OR
+                     (mvc_code_clean LIKE '3345%' AND mvc_code_clean LIKE '%A%')) 
+                THEN 'Red Light/Stop Sign/Yield'
+                WHEN (mvc_code_clean LIKE '3331%') OR
+                     (mvc_code_clean LIKE '3332%') OR
+                     ((mvc_code_clean LIKE '3334%' AND mvc_code_clean LIKE '%A%') OR
+                     (mvc_code_clean LIKE '3334%' AND mvc_code_clean LIKE '%B%')) OR
+                     (mvc_code_clean LIKE '3335%') OR
+                     (mvc_code_clean LIKE '3336%') 
+                THEN 'Improper Turn/Signal'
+                WHEN (mvc_code_clean LIKE '3361%') OR
+                     (mvc_code_clean LIKE '3362%') OR
+                     (mvc_code_clean LIKE '3363%') OR
+                     (mvc_code_clean LIKE '3365%') OR
+                     (mvc_code_clean LIKE '3367%') OR
+                     (mvc_code_clean LIKE '3714%') OR
+                     (mvc_code_clean LIKE '3736%') 
+                THEN 'Speeding/Reckless/Careless Driving'
+                WHEN (mvc_code_clean LIKE '4301%') OR
+                     (mvc_code_clean LIKE '4302%') OR
+                     (mvc_code_clean LIKE '4303%') OR
+                     (mvc_code_clean = '4306') 
+                THEN 'Lights'
+                WHEN ((mvc_code_clean LIKE '4524%' AND mvc_code_clean LIKE '%A%') OR
+                     (mvc_code_clean LIKE '4524%' AND mvc_code_clean NOT LIKE '%A%')) 
+                THEN 'Windshield Obstruction/Tint'
+                WHEN (mvc_code_clean LIKE '4703%') OR
+                     ((mvc_code_clean LIKE '4706%' AND mvc_code_clean LIKE '%C%')) 
+                THEN 'Inspection/Emission Sticker'
+                ELSE 'Other'
+            END AS violation_category
             FROM (
                 SELECT datetimeoccur as driverdt,location as driverl, min(id) as id
                 FROM car_ped_stops
@@ -201,7 +255,6 @@ if __name__ == "__main__":
         CASE WHEN sum(individual_arrested) > 0 THEN 1 ELSE 0 END as was_arrested,
         CASE WHEN sum(individual_contraband) > 0 or sum(vehicle_contraband) > 0 THEN 1 ELSE 0 END as was_found_with_contraband,
         CASE WHEN sum(individual_frisked) > 0 or sum(vehicle_frisked) > 0 THEN 1 ELSE 0 END as was_frisked,
-        max(case WHEN mvc_reason like '%WARNING%' THEN 1 ELSE 0 END) as was_warned,
         max(mvc_code_clean) as mvc_code_clean,
         CASE
             WHEN
@@ -233,24 +286,19 @@ if __name__ == "__main__":
         per_stop_query = per_stop_query_str(district=district)
         # This query gives quarterly stop counts over time
         return f"""SELECT 
-        date_trunc('quarter',datetimeoccur) as quarter,
+        (
+            strftime('%Y', datetimeoccur) || '-' ||
+            CASE
+              WHEN strftime('%m', datetimeoccur) BETWEEN '01' AND '03' THEN '01'
+              WHEN strftime('%m', datetimeoccur) BETWEEN '04' AND '06' THEN '04'
+              WHEN strftime('%m', datetimeoccur) BETWEEN '07' AND '09' THEN '07'
+              WHEN strftime('%m', datetimeoccur) BETWEEN '10' AND '12' THEN '10'
+            END || '-01T00:00:00.000000Z'
+        ) AS quarter,
         districtoccur, psa,
         race as "Race", gender as "Gender", age_range as "Age Range",
         count(*) as n_stopped, mvc_code_clean,
-        sum(
-            case when st_y(the_geom)<42 and the_geom is not null then 1 else 0 end
-        ) as n_stopped_locatable, -- point with location that is not fake 
-        sum(
-            CASE WHEN EXISTS (
-                SELECT 1
-                FROM high_injury_network_2020 hin
-                WHERE ST_DWithin(query.the_geom, hin.the_geom, {DIST_FROM_HIN_THRESHOLD})
-                AND ST_Y(query.the_geom) < 42 AND query.the_geom is not null
-            ) 
-            THEN 1 ELSE 0 END
-        ) as n_stopped_locatable_on_hin,
         sum(was_searched) as n_searched, 
-        sum(was_warned) as n_warned, 
         sum(was_arrested) as n_arrested, 
         sum(was_found_with_contraband) as n_contraband, 
         sum(was_frisked) as n_frisked, 
@@ -261,10 +309,9 @@ if __name__ == "__main__":
     """
 
     # Download the stop data
+    import sqlite3
 
-    # Download from most recent backup
-    csv_file = os.path.join(DATA_DIR, "car_ped_stops", "car_ped_stops_year_2018.csv")
-    df = pd.read_csv(csv_file)
+    con = sqlite3.connect(os.path.join(DATA_DIR, "deo_dashboard.sql"))
 
     df_origs = []
     district_result = make_request(
@@ -275,9 +322,8 @@ if __name__ == "__main__":
     for i, district in enumerate(districts):
         print(f"{district}, {i+1} of {len(districts)}")
         query = grouped_query_psa(district=district)
-        breakpoint()
-        result = make_request(query)
-        df_district_orig = pd.DataFrame(result["rows"])
+        df_district_orig = pd.read_sql(query, con=con)
+        # df_district_orig = pd.DataFrame(result["rows"])
         if not df_district_orig.empty:
             df_origs.append(df_district_orig)
 

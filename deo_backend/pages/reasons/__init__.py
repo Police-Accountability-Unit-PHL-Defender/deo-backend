@@ -7,10 +7,10 @@ from dash_helpers import (
     Subtitle,
     TimeAggregationChoice,
 )
+from .comparison_bars import LAYOUT as COMPARISON_BARS_LAYOUT
 
-PAGE_TITLE = "How many stops do police make, and who do they stop?"
-SUBTITLE_1 = Subtitle(name="How many traffic stops do police make?")
-SUBTITLE_2 = Subtitle(name="Who are police stopping in traffic stops?")
+PAGE_TITLE = "Do police make traffic stops for safety reasons?"
+# SUBTITLE_1 = Subtitle(name="How many traffic stops do police make?")
 
 
 MENU_LAYOUT = [
@@ -18,11 +18,7 @@ MENU_LAYOUT = [
         children=PAGE_TITLE,
         style={"textAlign": "center"},
     ),
-    SUBTITLE_1.a_href,
     html.Div(),
-    SUBTITLE_2.a_href,
-    html.Div(),
-    SUBTITLE_1.h2,
 ]
 
-layout = html.Div()
+layout = html.Div(MENU_LAYOUT + COMPARISON_BARS_LAYOUT)

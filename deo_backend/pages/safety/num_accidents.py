@@ -14,7 +14,7 @@ import sqlite3
 from models import PoliceAction
 from models import before_deo_filter, after_deo_filter
 from models import PoliceActionName
-from models import QuarterHow
+from models import DfType
 from demographics.constants import (
     DEMOGRAPHICS_DISTRICT,
 )
@@ -85,25 +85,10 @@ def api_func(
     ] = "year",
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    geo_filter = FilteredDf(location=location)
+    geo_filter = FilteredDf(location=location, df_type=DfType.stops_by_hin)
     geo_level_str = geo_filter.geography.string
-    df_geo_all_time = geo_filter.df
 
-    # Graph2
-    df_geo_total_all_time = (
-        df_geo_all_time.groupby(
-            [
-                "districtoccur",
-                "psa",
-                "year",
-                "quarter_dt",
-                "quarter",
-                "q_str",
-            ]
-        )[[a.value.sql_column for a in PoliceAction]]
-        .sum()
-        .reset_index()
-    )
+    df_geo_all_time = geo_filter.df
 
     def _get_value_and_pct(start_date, end_date):
         value = (
@@ -136,6 +121,7 @@ def api_func(
         if time_aggregation == "quarter"
         else df_grouped["year"]
     )
+
     fig1 = px.bar(
         df_grouped,
         x="x_label",
