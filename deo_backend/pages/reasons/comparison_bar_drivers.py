@@ -71,14 +71,12 @@ LAYOUT = LAYOUT + [
     ),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
-    dcc.Graph(id=f"{prefix}-graph2"),
 ]
 
 
 @callback(
     [
         Output(f"{prefix}-graph1", "figure"),
-        Output(f"{prefix}-graph2", "figure"),
         Output(f"{prefix}-result-api", "href"),
     ],
     [
@@ -106,64 +104,27 @@ def api_func(
         .reset_index()
     )
 
-    def pct_stop_fig(df, col, vals, col_text):
-        # B comes before W so to make sort by Black stops, then ascending needs to be True
-        df_filt = df[df[col].isin(vals)].sort_values(
-            [col, "n_stopped"], ascending=[race == "Black", True]
-        )
-        total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
-
-        df_filt["pct_stopped"] = 100 * df_filt.apply(
-            lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
-        )
-        fig = px.bar(
-            df_filt,
-            x="violation_category",
-            y="pct_stopped",
-            barmode="group",
-            color=col,
-            color_discrete_map={"White": "Red", "Black": "Blue", "Non-white": "Blue"},
-        )
-        fig.update_yaxes(title_text=f"% of Stops  where {col_text} For White/Non-White")
-        return fig
-
-    fig1 = pct_stop_fig(df_reasons_grouped, "Race", ["White", "Black"], "driver")
-
-    # By neighborhood
-    whiteness_of_districts = (
-        DEMOGRAPHICS_DISTRICT["white"] / DEMOGRAPHICS_DISTRICT["total"]
-    ).sort_values()
-    districts_by_nonwhiteness = whiteness_of_districts.index
-    majority_white_districts = whiteness_of_districts[
-        whiteness_of_districts > 0.5
-    ].index
-    majority_nonwhite_districts = whiteness_of_districts[
-        whiteness_of_districts <= 0.5
-    ].index
-
-    df_reasons.loc[
-        df_reasons[df_reasons["districtoccur"].isin(majority_white_districts)].index,
-        "majority_district",
-    ] = "White"
-    df_reasons.loc[
-        df_reasons[df_reasons["districtoccur"].isin(majority_nonwhite_districts)].index,
-        "majority_district",
-    ] = "Non-white"
-
-    df_reasons_grouped_neighborhood = (
-        df_reasons.groupby(["violation_category", "majority_district"])["n_stopped"]
-        .sum()
-        .reset_index()
+    col = "Race"
+    vals = ["White", "Black"]
+    df_filt = df_reasons_grouped[df_reasons_grouped[col].isin(vals)].sort_values(
+        [col, "n_stopped"], ascending=[race != "White", True]
     )
-    fig2 = pct_stop_fig(
-        df_reasons_grouped_neighborhood,
-        "majority_district",
-        ["White", "Non-white"],
-        "neighborhood",
+    total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
+
+    df_filt["pct_stopped"] = 100 * df_filt.apply(
+        lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
     )
+    fig = px.bar(
+        df_filt,
+        x="violation_category",
+        y="pct_stopped",
+        barmode="group",
+        color=col,
+        color_discrete_map={"White": "Red", "Black": "Blue", "Non-white": "Blue"},
+    )
+    fig.update_yaxes(title_text="% of Stops By Reason for Drivers By Race")
 
     return endpoint.output(
-        fig_barplot1=fig1,
-        fig_barplot2=fig2,
+        fig_barplot=fig,
         data={},
     )
