@@ -20,6 +20,7 @@ from models import DemographicCategory
 from models import DfType
 from models import DEO_YEARS
 from models import FilteredDf
+from models import MOST_RECENT_YEAR
 from models import Quarter
 from dash_helpers import TimeAggregationChoice, deo_year_dropdown
 from fastapi import APIRouter, Query
@@ -38,7 +39,14 @@ LAYOUT = LAYOUT + [
     html.Span(
         "When Philadelphia police gave a reason, how often did police stop people of different races for operational violations in "
     ),
-    deo_year_dropdown(f"{prefix}-year"),
+    dcc.Dropdown(
+        placeholder="year",
+        options=[{"label": v, "value": v} for v in DEO_YEARS]
+        + [{"label": "all years", "value": 0}],
+        value=None,
+        id=f"{prefix}-year",
+        style={"display": "inline-block", "width": "150px"},
+    ),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -55,17 +63,27 @@ LAYOUT = LAYOUT + [
 )
 @router.get(API_URL)
 def api_func(
-    year: Annotated[int, Query(description="year", ge=2021)] = 2022,
+    year: Annotated[
+        int | None, Query(description="year, or null if combining all years", ge=2021)
+    ] = None,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
     demographic_category = DemographicCategory.race
     police_action = PoliceAction.stop.value
-    geo_filtered = FilteredDf(
-        start_date=datetime(year, 1, 1),
-        end_date=datetime(year, 12, 31),
-        df_type=DfType.stops_by_reason,
-    )
+    breakpoint()
+    if year:
+        geo_filtered = FilteredDf(
+            start_date=datetime(year, 1, 1),
+            end_date=datetime(year, 12, 31),
+            df_type=DfType.stops_by_reason,
+        )
+    else:
+        geo_filtered = FilteredDf(
+            start_date=datetime(2021, 1, 1),
+            end_date=datetime(MOST_RECENT_YEAR, 12, 31),
+            df_type=DfType.stops_by_reason,
+        )
     df_filtered = geo_filtered.df
     df_percent_action_by_demo = (
         df_filtered.groupby([demographic_category, "violation_category"])[

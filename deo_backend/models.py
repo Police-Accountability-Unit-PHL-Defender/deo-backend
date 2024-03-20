@@ -6,11 +6,13 @@ import sqlite3
 from datetime import date
 import pandas as pd
 from datetime import datetime
-from datetime import timedelta
 from enum import Enum
 from enum import auto
 from functools import lru_cache
 import deo_backend
+
+MOST_RECENT_YEAR = 2023
+MOST_RECENT_QUARTER_START = "2023-10-01"
 
 SEASON_QUARTER_MAPPING = {
     "Q1": "Jan-Mar",
@@ -22,7 +24,7 @@ SEASON_START_MAPPING = {"Q1": "Jan", "Q2": "Apr", "Q3": "Jul", "Q4": "Oct"}
 SEASON_END_MAPPING = {"Q1": "Mar", "Q2": "Jun", "Q3": "Sep", "Q4": "Dec"}
 
 ALL_QUARTERS = pd.date_range(
-    "2014-01-01", datetime.now() - timedelta(days=95), freq="QS-JAN", inclusive="left"
+    "2014-01-01", MOST_RECENT_QUARTER_START, freq="QS-JAN", inclusive="left"
 )
 YEARS = list(range(ALL_QUARTERS[0].year, datetime.now().year))
 DEO_YEARS = list(range(2021, datetime.now().year))

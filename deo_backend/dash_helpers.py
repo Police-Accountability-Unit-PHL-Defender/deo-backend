@@ -95,7 +95,7 @@ def qyear_dropdown(html_id, /, *, default, how: QuarterHow = QuarterHow.start):
 
 def deo_year_dropdown(html_id, /, *, default=2022):
     return dcc.Dropdown(
-        placeholder="quarter-year",
+        placeholder="year",
         options=[{"label": v, "value": v} for v in DEO_YEARS],
         value=default,
         id=html_id,
