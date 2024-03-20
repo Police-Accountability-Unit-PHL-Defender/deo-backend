@@ -51,7 +51,7 @@ router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
     html.Div(
-        "Do Philadelphia police make traffic stopsⓘ for different reasons in districtsⓘ where most residents are white, compared to districts where most residents are people of color?"
+        "Do Philadelphia police make traffic stops for different reasons in districts where most residents are white, compared to districts where most residents are people of color?"
     ),
     html.Span(
         "When Philadelphia police gave a reason, what were the primary reasons why police stopped drivers in majority "
@@ -67,7 +67,7 @@ LAYOUT = LAYOUT + [
                 "value": "Non-white",
             },
         ],
-        value="Black",
+        value="Non-white",
         id=f"{prefix}-race",
         style={"display": "inline-block", "width": "300px"},
     ),
@@ -76,6 +76,11 @@ LAYOUT = LAYOUT + [
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
+
+
+class DistrictType(str, Enum):
+    majority_white = "Majority white"
+    majority_nonwhite = "Majority non-white"
 
 
 @callback(
@@ -95,6 +100,12 @@ def api_func(
         Literal["Non-white", "White"], Query(description="race")
     ] = "Non-white",
 ):
+    race_ascending_sort_bool = race != "White"
+    title = (
+        f"Primary Reasons PPD Stopped Drivers in Majority Non-White Districts, Compared to Majority White Districts, in {year}"
+        if race == "Non-white"
+        else f"Primary Reasons PPD Stopped Drivers in Majority White Districts, Compared to Majority Non-White Districts, in {year}"
+    )
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
     df_reasons = FilteredDf(
@@ -113,11 +124,11 @@ def api_func(
     df_reasons.loc[
         df_reasons[df_reasons["districtoccur"].isin(MAJORITY_WHITE_DISTRICTS)].index,
         "majority_district",
-    ] = "White"
+    ] = DistrictType.majority_white.value
     df_reasons.loc[
         df_reasons[df_reasons["districtoccur"].isin(MAJORITY_NONWHITE_DISTRICTS)].index,
         "majority_district",
-    ] = "Non-white"
+    ] = DistrictType.majority_nonwhite.value
 
     df_reasons_grouped_neighborhood = (
         df_reasons.groupby(["violation_category", "majority_district"])["n_stopped"]
@@ -125,10 +136,9 @@ def api_func(
         .reset_index()
     )
     col = "majority_district"
-    vals = ["White", "Non-white"]
-    df_filt = df_reasons_grouped_neighborhood[
-        df_reasons_grouped_neighborhood[col].isin(vals)
-    ].sort_values([col, "n_stopped"], ascending=[race != "White", False])
+    df_filt = df_reasons_grouped_neighborhood.sort_values(
+        [col, "n_stopped"], ascending=[race_ascending_sort_bool, False]
+    )
     total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
     df_filt["pct_stopped"] = (
         100 * df_filt.apply(lambda x: x["n_stopped"] / total_stops[x[col]], axis=1)
@@ -140,10 +150,11 @@ def api_func(
         y="pct_stopped",
         barmode="group",
         color="col_str",
-        color_discrete_map={"White": "Red", "Black": "Blue", "Non-white": "Blue"},
-        title=f"Primary Reasons PPD Stopped Drivers in Majority Non-White Districts, Compared to Majority White Districts, in {year}"
-        if race == "Black"
-        else f"Primary Reasons PPD Stopped Drivers in Majority White Districts, Compared to Majority Non-White Districts, in {year}",
+        color_discrete_map={
+            f"{DistrictType.majority_white.value} districts": "Red",
+            f"{DistrictType.majority_nonwhite.value} districts": "Blue",
+        },
+        title=title,
         hover_data=["n_stopped"],
         labels={
             "pct_stopped": "Percentage (%)",
@@ -151,10 +162,16 @@ def api_func(
         },
     )
     for trace in fig.data:
-        if trace["legendgroup"] == "Non-white districts":
-            trace.hovertemplate = "Majority Non-white districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
-        if trace["legendgroup"] == "White districts":
-            trace.hovertemplate = "White districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+        if trace["legendgroup"] == f"{DistrictType.majority_nonwhite.value} districts":
+            trace.hovertemplate = (
+                DistrictType.majority_nonwhite.value
+                + " districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+            )
+        elif trace["legendgroup"] == f"{DistrictType.majority_white.value} districts":
+            trace.hovertemplate = (
+                DistrictType.majority_white.value
+                + " districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+            )
 
     return endpoint.output(
         fig_barplot=fig,
