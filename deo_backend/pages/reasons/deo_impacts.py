@@ -54,7 +54,9 @@ LAYOUT = LAYOUT + [
         "Driving Equality came into effect on March 3, 2022. After Driving Equality, did Philadelphia police make fewer traffic stops for the 8 reasons covered by the law?"
     ),
     html.Span("Show primary reasons for traffic stops by "),
-    TimeAggregationChoice.dropdown(id=f"{prefix}-time-aggregation"),
+    TimeAggregationChoice.dropdown(
+        id=f"{prefix}-time-aggregation", default_value="quarter"
+    ),
     html.Span("."),
     html.Div(
         "See What is Driving Equality? to learn more about the 8 reasons covered by the law. Importantly, Philadelphia police can still stop drivers for registration and lighting violations that are not covered by Driving Equality. For example, Philadelphia police can stop drivers for having all lights out, but police cannot stop drivers for a single broken bulb or light."
@@ -76,7 +78,7 @@ LAYOUT = LAYOUT + [
 def api_func(
     time_aggregation: Annotated[
         TimeAggregationChoice, Query(description="Time Aggregation")
-    ] = "year",
+    ] = "quarter",
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
