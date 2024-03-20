@@ -127,7 +127,7 @@ class Endpoint:
             fig_data = []
             fig_trendlines = []
 
-            for this_fig_data in fig.data:
+            for i, this_fig_data in enumerate(fig.data):
                 for x_val, y_val, custom_data in zip(
                     this_fig_data.x,
                     this_fig_data.y,
@@ -152,6 +152,7 @@ class Endpoint:
                                 "group": this_fig_data["name"] or None,
                                 x_axis_name: convert(x_val),
                                 y_axis_name: convert(y_val),
+                                # "annotation": fig.layout.annotations[i],
                                 "hover_text": this_fig_data["hovertemplate"]
                                 .replace("%{", "{")
                                 .replace("customdata[0]", "z")

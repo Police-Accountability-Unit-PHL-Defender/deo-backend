@@ -150,9 +150,7 @@ def api_func(
         title=f"Number of Intrusions During PPD Traffic Stops in {geo_level_str} from {geo_filter.get_date_range_str(time_aggregation)}",
     )
     for trace in fig.data:
-        trace.hovertemplate = (
-            "%{x}<br>%{y:,} intrusions<br>%{customdata[0]}% intrusion rate"
-        )
+        trace.hovertemplate = "%{x}<br>%{y:,} intrusions<br>%{customdata[0]}% intrusion rate<extra></extra>"
 
     num_total = df_geo_total_all_time[police_action.sql_column].sum()
     pct_total = (

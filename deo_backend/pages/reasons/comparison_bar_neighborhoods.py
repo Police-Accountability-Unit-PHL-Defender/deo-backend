@@ -50,20 +50,29 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
-    html.Span(
-        "When Philadelphia police provided a reason, what were the primary reasons why police stopped White and Non-white neighborhoods in Philadelphia in "
+    html.Div(
+        "Do Philadelphia police make traffic stopsⓘ for different reasons in districtsⓘ where most residents are white, compared to districts where most residents are people of color?"
     ),
-    deo_year_dropdown(f"{prefix}-year"),
-    html.Span(" sorted by "),
+    html.Span(
+        "When Philadelphia police gave a reason, what were the primary reasons why police stopped drivers in majority "
+    ),
     dcc.Dropdown(
         options=[
-            {"label": "White", "value": "White"},
-            {"label": "Black", "value": "Black"},
+            {
+                "label": "white districts, compared to majority non-white districts",
+                "value": "White",
+            },
+            {
+                "label": "non-white districts, compared to majority white districts",
+                "value": "Non-white",
+            },
         ],
         value="Black",
         id=f"{prefix}-race",
-        style={"display": "inline-block", "width": "150px"},
+        style={"display": "inline-block", "width": "300px"},
     ),
+    html.Span(" in Philadephia in "),
+    deo_year_dropdown(f"{prefix}-year"),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -82,7 +91,9 @@ LAYOUT = LAYOUT + [
 @router.get(API_URL)
 def api_func(
     year: Annotated[int, Query(description="year", ge=2021)] = 2022,
-    race: Annotated[Literal["Black", "White"], Query(description="race")] = "Black",
+    race: Annotated[
+        Literal["Non-white", "White"], Query(description="race")
+    ] = "Non-white",
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
@@ -122,17 +133,28 @@ def api_func(
     df_filt["pct_stopped"] = 100 * df_filt.apply(
         lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
     )
+    df_filt["col_str"] = df_filt[col] + " districts"
     fig = px.bar(
         df_filt,
         x="violation_category",
         y="pct_stopped",
         barmode="group",
-        color=col,
+        color="col_str",
         color_discrete_map={"White": "Red", "Black": "Blue", "Non-white": "Blue"},
+        title=f"Primary Reasons PPD Stopped Drivers in Majority Non-White Districts, Compared to Majority White Districts, in {year}"
+        if race == "Black"
+        else f"Primary Reasons PPD Stopped Drivers in Majority White Districts, Compared to Majority Non-White Districts, in {year}",
+        hover_data=["n_stopped"],
+        labels={
+            "pct_stopped": "Percentage (%)",
+            "violation_category": "Primary Reason for Traffic Stop",
+        },
     )
-    fig.update_yaxes(
-        title_text="% of Stops By Reason for Neighborhoods By Racial Majority"
-    )
+    for trace in fig.data:
+        if trace["legendgroup"] == "Non-white districts":
+            trace.hovertemplate = "Majority Non-white districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+        if trace["legendgroup"] == "White districts":
+            trace.hovertemplate = "White districts<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
 
     return endpoint.output(
         fig_barplot=fig,
