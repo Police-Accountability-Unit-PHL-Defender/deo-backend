@@ -16,6 +16,8 @@ from models import PoliceActionName
 from models import DfType
 from demographics.constants import (
     DEMOGRAPHICS_DISTRICT,
+    MAJORITY_WHITE_DISTRICTS,
+    MAJORITY_NONWHITE_DISTRICTS,
 )
 from models import AgeGroup
 from models import DemographicCategory
@@ -96,7 +98,7 @@ def api_func(
         end_date=datetime(year, 12, 31),
         df_type=DfType.stops_by_reason,
     ).df
-    df_reasons = df_reasons[df_reasons["violation_category"] != "Other"]
+    df_reasons = df_reasons[~df_reasons["violation_category"].isin(["Other", "None"])]
 
     df_reasons_grouped = (
         df_reasons.groupby(["Race", "violation_category"])["n_stopped"]
@@ -108,24 +110,12 @@ def api_func(
         # B comes before W so to make sort by Black stops, then ascending needs to be True
         return fig
 
-    # By neighborhood
-    whiteness_of_districts = (
-        DEMOGRAPHICS_DISTRICT["white"] / DEMOGRAPHICS_DISTRICT["total"]
-    ).sort_values()
-    districts_by_nonwhiteness = whiteness_of_districts.index
-    majority_white_districts = whiteness_of_districts[
-        whiteness_of_districts > 0.5
-    ].index
-    majority_nonwhite_districts = whiteness_of_districts[
-        whiteness_of_districts <= 0.5
-    ].index
-
     df_reasons.loc[
-        df_reasons[df_reasons["districtoccur"].isin(majority_white_districts)].index,
+        df_reasons[df_reasons["districtoccur"].isin(MAJORITY_WHITE_DISTRICTS)].index,
         "majority_district",
     ] = "White"
     df_reasons.loc[
-        df_reasons[df_reasons["districtoccur"].isin(majority_nonwhite_districts)].index,
+        df_reasons[df_reasons["districtoccur"].isin(MAJORITY_NONWHITE_DISTRICTS)].index,
         "majority_district",
     ] = "Non-white"
 
