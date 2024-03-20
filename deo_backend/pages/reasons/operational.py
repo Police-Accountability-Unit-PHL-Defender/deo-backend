@@ -1,4 +1,7 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from fastapi_models import Endpoint, location_annotation, quarter_annotation
+from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
+from models import VIOLATION_CATEGORIES_OPERATIONAL
 import numpy as np
 import uuid
 from typing import Literal
@@ -13,32 +16,12 @@ import pandas as pd
 import sqlite3
 
 from models import PoliceAction
-from models import TimeAggregation
-from models import PoliceActionName
-from models import DfType
-from demographics.constants import (
-    DEMOGRAPHICS_DISTRICT,
-)
-from models import AgeGroup
 from models import DemographicCategory
-from models import GenderGroup
-from models import RacialGroup
-from models import Geography
+from models import DfType
+from models import DEO_YEARS
 from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
 from models import Quarter
-from fastapi_models import Endpoint, location_annotation, quarter_annotation
-from dash_helpers import (
-    location_dropdown,
-    qyear_dropdown,
-    demographic_dropdown,
-    Subtitle,
-    TimeAggregationChoice,
-    police_action_dropdown,
-    ActionWordType,
-)
-import os
-
+from dash_helpers import TimeAggregationChoice, deo_year_dropdown
 from fastapi import APIRouter, Query
 from enum import auto, Enum
 from routers import ROUTERS
@@ -50,7 +33,7 @@ router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
     html.Span("How did Operational vs not change over time? Show results by "),
-    TimeAggregationChoice.dropdown(id=f"{prefix}-time-aggregation"),
+    deo_year_dropdown(f"{prefix}-year"),
     html.Span("."),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -62,52 +45,64 @@ LAYOUT = LAYOUT + [
         Output(f"{prefix}-result-api", "href"),
     ],
     [
-        Input(f"{prefix}-time-aggregation", "value"),
+        Input(f"{prefix}-year", "value"),
     ],
 )
 @router.get(API_URL)
 def api_func(
-    time_aggregation: Annotated[
-        TimeAggregationChoice, Query(description="Time Aggregation")
-    ] = "year",
+    year: Annotated[int, Query(description="year", ge=2021)] = 2022,
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
+    demographic_category = DemographicCategory.race
     police_action = PoliceAction.stop.value
-    geo_filter = FilteredDf(
-        start_date=datetime(2022, 1, 1),
-        end_date=MOST_RECENT_QUARTER,
+    geo_filtered = FilteredDf(
+        start_date=datetime(year, 1, 1),
+        end_date=datetime(year, 12, 31),
         df_type=DfType.stops_by_reason,
     )
-    df_reasons = geo_filter.df
-    geo_level_str = geo_filter.geography.string
-    # Boolean in SQLITE
-    df_reasons = df_reasons[df_reasons["violation_is_operational"].astype(int) == 1]
-    df_grouped = (
-        df_reasons.groupby([time_aggregation, "violation_category"])[
-            [police_action.sql_column]
+    df_filtered = geo_filtered.df
+    df_percent_action_by_demo = (
+        df_filtered.groupby([demographic_category, "violation_category"])[
+            [
+                police_action.sql_column,
+            ]
         ]
         .sum()
         .reset_index()
     )
-    df_grouped["x_label"] = (
-        df_grouped["quarter"].apply(Quarter.year_quarter_to_year_season)
-        if time_aggregation == "quarter"
-        else df_grouped["year"]
+    df_percent_action_by_demo_pct = (
+        (
+            df_percent_action_by_demo[
+                df_percent_action_by_demo["violation_category"].isin(
+                    VIOLATION_CATEGORIES_OPERATIONAL
+                )
+            ]
+            .groupby(demographic_category)[police_action.sql_column]
+            .sum()
+            / df_percent_action_by_demo.groupby(demographic_category)[
+                police_action.sql_column
+            ].sum()
+            * 100
+        )
+        .round(1)
+        .to_frame("pct_operational")
+        .reset_index()
+    )
+
+    df_percent_action_by_demo_pct[demographic_category] = pd.Categorical(
+        df_percent_action_by_demo_pct[demographic_category],
+        DemographicCategory(demographic_category).order_of_group,
     )
     fig = px.bar(
-        df_grouped.sort_values(police_action.sql_column, ascending=False),
-        x="x_label",
-        y=police_action.sql_column,
-        title=f"Number of PPD {police_action.noun.title()} in {geo_level_str} from {geo_filter.get_date_range_str(time_aggregation)}",
-        color="violation_category",
-        labels={
-            police_action.sql_column: "Number of Traffic Stops",
-            "x_label": "Quarter" if time_aggregation == "quarter" else "Year",
-        },
+        df_percent_action_by_demo_pct.sort_values(demographic_category),
+        x=demographic_category.value,
+        title=f"% Operational Stops By {demographic_category.value} from {geo_filtered.date_range_str}",
+        labels={"pct_operational": "% Operational Stops"},
+        y="pct_operational",
     )
     for trace in fig.data:
-        trace.hovertemplate = "%{x}<br>%{y:,} " + police_action.noun
+        trace.hovertemplate = "%{x}<br>%{y:}% Operational Stops<br>"
 
     return endpoint.output(
         fig_barplot=fig,

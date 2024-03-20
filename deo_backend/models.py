@@ -25,6 +25,7 @@ ALL_QUARTERS = pd.date_range(
     "2014-01-01", datetime.now() - timedelta(days=95), freq="QS-JAN", inclusive="left"
 )
 YEARS = list(range(ALL_QUARTERS[0].year, datetime.now().year))
+DEO_YEARS = list(range(2021, datetime.now().year))
 MOST_RECENT_QUARTER = f"{ALL_QUARTERS[-1].year}-Q{ALL_QUARTERS[-1].quarter}"
 FIRST_QUARTER = f"{ALL_QUARTERS[0].year}-Q{ALL_QUARTERS[0].quarter}"
 FOUR_QUARTERS_AGO = f"{ALL_QUARTERS[-4].year}-Q{ALL_QUARTERS[-4].quarter}"
@@ -37,6 +38,21 @@ DIVISION_TO_DISTRICTS_MAPPING = {
     "SWPD": ["12", "16", "18", "19"],
     "EPD": ["24", "25", "26"],
 }
+
+VIOLATION_CATEGORIES_OPERATIONAL = [
+    "Failure to Obey Traffic Sign/Light",
+    "Improper Pass, Lane, One Way",
+    "Improper Turn/Signal",
+    "Red Light/Stop Sign/Yield",
+    "Speeding/Reckless/Careless Driving",
+]
+VIOLATION_CATEGORIES_DEO_IMPACTED = [
+    "Display License Plate",
+    "Inspection/Emission Sticker",
+    "Lights",
+    "Registration",
+    "Windshield Obstruction",
+]
 
 
 def english_comma_separated(lst):

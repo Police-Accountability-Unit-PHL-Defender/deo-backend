@@ -27,6 +27,7 @@ from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING
 from models import Quarter
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
 from dash_helpers import (
+    deo_year_dropdown,
     location_dropdown,
     qyear_dropdown,
     demographic_dropdown,
@@ -35,6 +36,7 @@ from dash_helpers import (
     police_action_dropdown,
     ActionWordType,
 )
+from models import DEO_YEARS
 import os
 
 from fastapi import APIRouter, Query
@@ -50,15 +52,7 @@ LAYOUT = LAYOUT + [
     html.Span(
         "When Philadelphia police provided a reason, what were the primary reasons why police stopped Black and white drivers in Philadelphia in "
     ),
-    dcc.Dropdown(
-        options=[
-            {"label": 2022, "value": 2022},
-            {"label": 2023, "value": 2023},
-        ],
-        value=2022,
-        id=f"{prefix}-year",
-        style={"display": "inline-block", "width": "150px"},
-    ),
+    deo_year_dropdown(f"{prefix}-year"),
     html.Span(" sorted by "),
     dcc.Dropdown(
         options=[
