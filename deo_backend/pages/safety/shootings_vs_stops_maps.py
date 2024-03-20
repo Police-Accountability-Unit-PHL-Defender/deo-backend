@@ -223,7 +223,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
             second_sentence = f"<b>{abs(pct_change_for_increase):.1f}% {pct_change_str} in {increase_col_str}"
         elif is_top_5_increase:
             first_sentence = f"<b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}%)"
-
             pct_change_str = "decrease" if pct_change_for_decrease < 0 else "increase"
             second_sentence = f"<b>{abs(pct_change_for_decrease):.1f}% {pct_change_str} in {decrease_col_str}"
         return f"<b>District {row['districtoccur']}<br>" + "<br>".join(
@@ -284,7 +283,7 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
 
 
 YEAR_2018_vs_2019_title = "Comparing 2018 to 2019: Districts with Largest % Increase in Traffic Stops vs. Districts with Largest % Decrease in Shootings"
-DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Increase in Traffic Stops vs. Districts with Largest % Decrease in Shootings"
+DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Decreases in Traffic Stops vs. Districts with Largest % Increases in Shootings"
 
 
 def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
