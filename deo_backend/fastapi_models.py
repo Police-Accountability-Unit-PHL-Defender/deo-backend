@@ -1,4 +1,5 @@
 from dash import dcc
+import pandas as pd
 from plotly.graph_objs import Scatter
 from flask import request
 from typing import Annotated
@@ -27,6 +28,11 @@ demographic_annotation = Annotated[
 def convert(x):
     if isinstance(x, np.int64):
         return int(x)
+    elif isinstance(x, float):
+        if pd.isna(x) or np.isinf(x):
+            return None
+        else:
+            return x
     else:
         return x
 
@@ -123,6 +129,7 @@ class Endpoint:
 
             x_axis_name = fig.layout.xaxis.title.text
             y_axis_name = fig.layout.yaxis.title.text
+            n_annotations = len(fig.layout.annotations)
 
             fig_data = []
             fig_trendlines = []
@@ -152,7 +159,9 @@ class Endpoint:
                                 "group": this_fig_data["name"] or None,
                                 x_axis_name: convert(x_val),
                                 y_axis_name: convert(y_val),
-                                # "annotation": fig.layout.annotations[i],
+                                "annotation": list(fig.layout.annotations)[i].text
+                                if n_annotations
+                                else None,
                                 "hover_text": this_fig_data["hovertemplate"]
                                 .replace("%{", "{")
                                 .replace("customdata[0]", "z")
