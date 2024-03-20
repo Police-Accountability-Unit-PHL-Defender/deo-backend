@@ -107,7 +107,7 @@ def api_func(
     col = "Race"
     vals = ["White", "Black"]
     df_filt = df_reasons_grouped[df_reasons_grouped[col].isin(vals)].sort_values(
-        [col, "n_stopped"], ascending=[race != "White", True]
+        [col, "n_stopped"], ascending=[race != "White", False]
     )
     total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
 

@@ -138,7 +138,7 @@ def api_func(
     vals = ["White", "Non-white"]
     df_filt = df_reasons_grouped_neighborhood[
         df_reasons_grouped_neighborhood[col].isin(vals)
-    ].sort_values([col, "n_stopped"], ascending=[race != "White", True])
+    ].sort_values([col, "n_stopped"], ascending=[race != "White", False])
     total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
     df_filt["pct_stopped"] = 100 * df_filt.apply(
         lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
