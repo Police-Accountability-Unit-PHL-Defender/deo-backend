@@ -49,20 +49,23 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
-    html.Span(
-        "When Philadelphia police provided a reason, what were the primary reasons why police stopped Black and white drivers in Philadelphia in "
+    html.Div(
+        "Do Philadelphia police stop Black and white drivers for different reasons? "
     ),
-    deo_year_dropdown(f"{prefix}-year"),
-    html.Span(" sorted by "),
+    html.Span(
+        "When Philadelphia police gave a reason, what were the primary reasons why police stopped "
+    ),
     dcc.Dropdown(
         options=[
-            {"label": "White", "value": "White"},
-            {"label": "Black", "value": "Black"},
+            {"label": "white drivers, compared to Black drivers", "value": "White"},
+            {"label": "Black drivers, compared to white drivers", "value": "Black"},
         ],
         value="Black",
         id=f"{prefix}-race",
-        style={"display": "inline-block", "width": "150px"},
+        style={"display": "inline-block", "width": "300px"},
     ),
+    html.Span(" in Philadephia in "),
+    deo_year_dropdown(f"{prefix}-year"),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -107,16 +110,29 @@ def api_func(
 
     df_filt["pct_stopped"] = 100 * df_filt.apply(
         lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
-    )
+    ).round(1)
+    df_filt["col_str"] = df_filt[col] + " drivers"
     fig = px.bar(
         df_filt,
         x="violation_category",
         y="pct_stopped",
         barmode="group",
-        color=col,
+        color="col_str",
         color_discrete_map={"White": "Red", "Black": "Blue", "Non-white": "Blue"},
+        title=f"Primary Reasons PPD Stopped Black Drivers, Compared to White Drivers, in {year}"
+        if race == "Black"
+        else f"Primary Reasons PPD Stopped White Drivers, Compared to Black Drivers, in {year}",
+        hover_data=["n_stopped"],
+        labels={
+            "pct_stopped": "Percentage (%)",
+            "violation_category": "Primary Reason for Traffic Stop",
+        },
     )
-    fig.update_yaxes(title_text="% of Stops By Reason for Drivers By Race")
+    for trace in fig.data:
+        if trace["legendgroup"] == "Black drivers":
+            trace.hovertemplate = "Black drivers<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
+        if trace["legendgroup"] == "White drivers":
+            trace.hovertemplate = "White drivers<br>%{x}<br>%{y:.01f}% of traffic stops<br>%{customdata[0]:,} traffic stops<extra></extra>"
 
     return endpoint.output(
         fig_barplot=fig,

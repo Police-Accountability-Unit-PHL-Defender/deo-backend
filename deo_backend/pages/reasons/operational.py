@@ -32,9 +32,14 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
-    html.Span("How did Operational vs not change over time? Show results by "),
+    html.Div(
+        "How often do Philadelphia police stop drivers for operational violations? Are there racial disparities in these traffic stops?"
+    ),
+    html.Span(
+        "When Philadelphia police gave a reason, how often did police stop people of different races for operational violations in "
+    ),
     deo_year_dropdown(f"{prefix}-year"),
-    html.Span("."),
+    html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
 
@@ -97,12 +102,14 @@ def api_func(
     fig = px.bar(
         df_percent_action_by_demo_pct.sort_values(demographic_category),
         x=demographic_category.value,
-        title=f"% Operational Stops By {demographic_category.value} from {geo_filtered.date_range_str}",
-        labels={"pct_operational": "% Operational Stops"},
+        title=f"Percentage of Operational Stops by Race in {year}",
+        labels={"pct_operational": "Percentage (%)"},
         y="pct_operational",
     )
     for trace in fig.data:
-        trace.hovertemplate = "%{x}<br>%{y:}% Operational Stops<br>"
+        trace.hovertemplate = (
+            "%{x}<br>%{y:}% of traffic stops for operational violations<extra></extra>"
+        )
 
     return endpoint.output(
         fig_barplot=fig,

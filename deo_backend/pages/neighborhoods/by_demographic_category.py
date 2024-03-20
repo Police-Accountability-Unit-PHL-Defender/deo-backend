@@ -208,16 +208,9 @@ def api_func(
         trace.hovertemplate = "%{x}<br>%{y}% intrusion rate"
 
     # Add text above each bar to show the percentage difference from the average
-    for index, row in df_percent_action_by_demo.reset_index().iterrows():
-        val_text = f"{np.abs(row['multiplier']):.1f}x"
-        if row[demographic_category] == demographic_baseline:
-            text = "Baseline"
-        else:
-            text = f"{val_text} of Baseline"
-
-        text = get_text_for_row(row, column="multiplier")
-        fig.add_annotation(
-            text=text,
+    annotations = [
+        dict(
+            text=get_text_for_row(row, column="multiplier"),
             x=index,
             y=row["percentage"],
             showarrow=False,
@@ -227,6 +220,9 @@ def api_func(
             xref="x",
             yref="y",
         )
+        for index, row in df_percent_action_by_demo.reset_index().iterrows()
+    ]
+    fig.update_layout(annotations=annotations)
 
     # Create new one that is percent of contraband from the intrusions
     df_percent_action_by_demo = (
@@ -276,26 +272,24 @@ def api_func(
         df_percent_action_by_demo[f"{police_action.sql_column}_no_contraband"]
     ) / (baseline_percentage)
 
-    for i, row in df_percent_action_by_demo.sort_values(
-        demographic_category
-    ).iterrows():
-        val_text = f"{np.abs(row['not_found_count_multiplier']):.2f}x"
-        if row[demographic_category] == demographic_baseline:
-            text = "Baseline"
-        else:
-            text = f"{val_text} of Baseline"
-        text = get_text_for_row(row, column="not_found_count_multiplier")
-        fig2.add_annotation(
+    annotations = [
+        dict(
+            text=get_text_for_row(row, column="not_found_count_multiplier"),
             x=row[demographic_category],
             y=row[f"{police_action.sql_column}_no_contraband"],
-            text=text,
             showarrow=False,
             xanchor="center",
             yanchor="bottom",
             opacity=0.8,
         )
+        for i, row in df_percent_action_by_demo.sort_values(
+            demographic_category
+        ).iterrows()
+    ]
 
-    fig2.update_layout(barmode="relative")  # Relative bar chart
+    fig2.update_layout(
+        barmode="relative", annotations=annotations
+    )  # Relative bar chart
 
     # Create the bar chart using Plotly Express
     # Calculate percentage difference from the average
@@ -320,12 +314,9 @@ def api_func(
         trace.hovertemplate = "%{x}<br>%{y:,}% contraband hit rate<br>"
 
     # Add text above each bar to show the percentage difference from the average
-    for index, row in df_percent_action_by_demo.sort_values(
-        demographic_category
-    ).iterrows():
-        text = get_text_for_row(row, column="found_multiplier")
-        fig3.add_annotation(
-            text=text,
+    annotations = [
+        dict(
+            text=get_text_for_row(row, column="found_multiplier"),
             x=row[demographic_category],
             y=row["percentage_found"],
             showarrow=False,
@@ -335,6 +326,11 @@ def api_func(
             xref="x",
             yref="y",
         )
+        for index, row in df_percent_action_by_demo.sort_values(
+            demographic_category
+        ).iterrows()
+    ]
+    fig3.update_layout(annotations=annotations)
 
     # Totals
     pct_not_found = (

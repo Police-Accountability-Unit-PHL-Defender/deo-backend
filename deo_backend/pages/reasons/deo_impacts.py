@@ -50,9 +50,15 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 LAYOUT = [html.A("**API FOR THIS QUESTION**:", id=f"{prefix}-result-api")]
 LAYOUT = LAYOUT + [
-    html.Span("How did DEO Reasons change over time? Show results by "),
+    html.Div(
+        "Driving Equality came into effect on March 3, 2022. After Driving Equality, did Philadelphia police make fewer traffic stops for the 8 reasons covered by the law?"
+    ),
+    html.Span("Show primary reasons for traffic stops by "),
     TimeAggregationChoice.dropdown(id=f"{prefix}-time-aggregation"),
     html.Span("."),
+    html.Div(
+        "See What is Driving Equality? to learn more about the 8 reasons covered by the law. Importantly, Philadelphia police can still stop drivers for registration and lighting violations that are not covered by Driving Equality. For example, Philadelphia police can stop drivers for having all lights out, but police cannot stop drivers for a single broken bulb or light."
+    ),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
 
@@ -104,7 +110,7 @@ def api_func(
         ),
         x="x_label",
         y=police_action.sql_column,
-        title=f"Number of PPD {police_action.noun.title()} in {geo_level_str} from {geo_filter.get_date_range_str(time_aggregation)}",
+        title="Number of PPD Traffic Stops for Reasons Covered by Driving Equality",
         color="violation_category",
         labels={
             police_action.sql_column: "Number of Traffic Stops",
@@ -112,7 +118,13 @@ def api_func(
         },
     )
     for trace in fig.data:
-        trace.hovertemplate = "%{x}<br>%{y:,} " + police_action.noun
+        trace.hovertemplate = (
+            "%{x}<br>"
+            + trace["legendgroup"]
+            + "<br>%{y:,} "
+            + police_action.noun
+            + "<extra></extra>"
+        )
 
     return endpoint.output(
         fig_barplot=fig,
