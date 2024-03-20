@@ -108,8 +108,8 @@ def api_func(
     )
     total_stops = df_filt.groupby(col)["n_stopped"].sum().to_dict()
 
-    df_filt["pct_stopped"] = 100 * df_filt.apply(
-        lambda x: x["n_stopped"] / total_stops[x[col]], axis=1
+    df_filt["pct_stopped"] = (
+        100 * df_filt.apply(lambda x: x["n_stopped"] / total_stops[x[col]], axis=1)
     ).round(1)
     df_filt["col_str"] = df_filt[col] + " drivers"
     fig = px.bar(
