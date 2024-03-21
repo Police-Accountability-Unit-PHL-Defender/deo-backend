@@ -93,13 +93,14 @@ def qyear_dropdown(html_id, /, *, default, how: QuarterHow = QuarterHow.start):
     )
 
 
-def deo_year_dropdown(html_id, /, *, default=2022):
+def deo_year_dropdown(html_id, /, *, default=2022, multi=False, width="150px"):
     return dcc.Dropdown(
         placeholder="year",
         options=[{"label": v, "value": v} for v in DEO_YEARS],
         value=default,
+        multi=multi,
         id=html_id,
-        style={"display": "inline-block", "width": "150px"},
+        style={"display": "inline-block", "width": width},
     )
 
 

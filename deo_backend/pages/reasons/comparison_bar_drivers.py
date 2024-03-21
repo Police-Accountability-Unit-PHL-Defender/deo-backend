@@ -65,7 +65,7 @@ LAYOUT = LAYOUT + [
         style={"display": "inline-block", "width": "300px"},
     ),
     html.Span(" in Philadephia in "),
-    deo_year_dropdown(f"{prefix}-year"),
+    deo_year_dropdown(f"{prefix}-year", default=2022),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -83,7 +83,7 @@ LAYOUT = LAYOUT + [
 )
 @router.get(API_URL)
 def api_func(
-    year: Annotated[int, Query(description="year", ge=2021)] = 2022,
+    year: Annotated[int, Query(description="years", alias="year")] = 2022,
     race: Annotated[Literal["Black", "White"], Query(description="race")] = "Black",
 ):
     endpoint = Endpoint(api_route=API_URL, inputs=locals())

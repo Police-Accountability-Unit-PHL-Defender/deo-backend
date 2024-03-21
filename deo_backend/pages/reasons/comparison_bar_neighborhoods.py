@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import DEO_YEARS
 import uuid
 from typing import Literal
 from typing import Annotated
@@ -72,7 +73,7 @@ LAYOUT = LAYOUT + [
         style={"display": "inline-block", "width": "300px"},
     ),
     html.Span(" in Philadephia in "),
-    deo_year_dropdown(f"{prefix}-year"),
+    deo_year_dropdown(f"{prefix}-year", default=2022),
     html.Span("?"),
     dcc.Graph(id=f"{prefix}-graph1"),
 ]
@@ -95,17 +96,11 @@ class DistrictType(str, Enum):
 )
 @router.get(API_URL)
 def api_func(
-    year: Annotated[int, Query(description="year", ge=2021)] = 2022,
+    year: Annotated[int, Query(description="years", alias="year")] = 2022,
     race: Annotated[
         Literal["Non-white", "White"], Query(description="race")
     ] = "Non-white",
 ):
-    race_ascending_sort_bool = race != "White"
-    title = (
-        f"Primary Reasons PPD Stopped Drivers in Majority Non-White Districts, Compared to Majority White Districts, in {year}"
-        if race == "Non-white"
-        else f"Primary Reasons PPD Stopped Drivers in Majority White Districts, Compared to Majority Non-White Districts, in {year}"
-    )
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
 
     df_reasons = FilteredDf(
@@ -114,6 +109,13 @@ def api_func(
         df_type=DfType.stops_by_reason,
     ).df
     df_reasons = df_reasons[~df_reasons["violation_category"].isin(["Other", "None"])]
+
+    race_ascending_sort_bool = race != "White"
+    title = (
+        f"Primary Reasons PPD Stopped Drivers in Majority Non-White Districts, Compared to Majority White Districts, in {year}"
+        if race == "Non-white"
+        else f"Primary Reasons PPD Stopped Drivers in Majority White Districts, Compared to Majority Non-White Districts, in {year}"
+    )
 
     df_reasons_grouped = (
         df_reasons.groupby(["Race", "violation_category"])["n_stopped"]
