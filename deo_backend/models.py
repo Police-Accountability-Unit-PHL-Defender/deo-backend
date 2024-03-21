@@ -24,7 +24,7 @@ SEASON_START_MAPPING = {"Q1": "Jan", "Q2": "Apr", "Q3": "Jul", "Q4": "Oct"}
 SEASON_END_MAPPING = {"Q1": "Mar", "Q2": "Jun", "Q3": "Sep", "Q4": "Dec"}
 
 ALL_QUARTERS = pd.date_range(
-    "2014-01-01", MOST_RECENT_QUARTER_START, freq="QS-JAN", inclusive="left"
+    "2013-12-31", MOST_RECENT_QUARTER_START, freq="QS-JAN", inclusive="right"
 )
 YEARS = list(range(ALL_QUARTERS[0].year, datetime.now().year))
 DEO_YEARS = list(range(2021, datetime.now().year))
