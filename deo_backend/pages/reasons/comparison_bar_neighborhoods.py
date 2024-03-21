@@ -96,7 +96,7 @@ class DistrictType(str, Enum):
 )
 @router.get(API_URL)
 def api_func(
-    year: Annotated[int, Query(description="years", alias="year")] = 2022,
+    year: Annotated[int, Query(description="year", alias="year")] = 2022,
     race: Annotated[
         Literal["Non-white", "White"], Query(description="race")
     ] = "Non-white",
