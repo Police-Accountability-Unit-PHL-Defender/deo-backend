@@ -20,7 +20,6 @@ from models import DemographicCategory
 from models import DfType
 from models import DEO_YEARS
 from models import FilteredDf
-from models import MOST_RECENT_YEAR
 from models import Quarter
 from dash_helpers import TimeAggregationChoice, deo_year_dropdown
 from fastapi import APIRouter, Query

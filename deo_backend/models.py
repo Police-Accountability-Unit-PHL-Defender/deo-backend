@@ -10,12 +10,14 @@ from enum import Enum
 from enum import auto
 from functools import lru_cache
 import deo_backend
+from env import DB_FILENAME, MOST_RECENT_QUARTER_START
 
 DATA_DIR = os.path.dirname(deo_backend.__file__)
-SQLITE_FILE = os.path.join(DATA_DIR, "open_data_philly.db")
 
-MOST_RECENT_YEAR = 2023
-MOST_RECENT_QUARTER_START = "2023-10-01"
+SQLITE_FILE = os.path.join(DATA_DIR, "data", DB_FILENAME)
+if not os.path.exists(SQLITE_FILE):
+    raise ValueError(f"Can't find {SQLITE_FILE}")
+
 
 SEASON_QUARTER_MAPPING = {
     "Q1": "Jan-Mar",
@@ -30,7 +32,7 @@ ALL_QUARTERS = pd.date_range(
     "2013-12-31", MOST_RECENT_QUARTER_START, freq="QS-JAN", inclusive="right"
 )
 YEARS = list(range(ALL_QUARTERS[0].year, datetime.now().year))
-DEO_YEARS = list(range(2021, datetime.now().year))
+DEO_YEARS = list(range(2022, datetime.now().year))
 MOST_RECENT_QUARTER = f"{ALL_QUARTERS[-1].year}-Q{ALL_QUARTERS[-1].quarter}"
 FIRST_QUARTER = f"{ALL_QUARTERS[0].year}-Q{ALL_QUARTERS[0].quarter}"
 FOUR_QUARTERS_AGO = f"{ALL_QUARTERS[-4].year}-Q{ALL_QUARTERS[-4].quarter}"
