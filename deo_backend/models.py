@@ -11,6 +11,9 @@ from enum import auto
 from functools import lru_cache
 import deo_backend
 
+DATA_DIR = os.path.dirname(deo_backend.__file__)
+SQLITE_FILE = os.path.join(DATA_DIR, "open_data_philly.db")
+
 MOST_RECENT_YEAR = 2023
 MOST_RECENT_QUARTER_START = "2023-10-01"
 
@@ -67,12 +70,10 @@ def english_comma_separated(lst):
 
 @lru_cache
 def df_shootings_raw():
-    DATA_DIR = os.path.dirname(deo_backend.__file__)
-    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file} shootings")
+    print(f"SQLITE: {SQLITE_FILE} shootings")
     return pd.read_sql(
         "select * from shootings",
-        sqlite3.connect(sqlite_file),
+        sqlite3.connect(SQLITE_FILE),
     )
 
 
@@ -86,24 +87,20 @@ def police_districts_geojson():
 
 @lru_cache
 def hin_sample_locations_df():
-    DATA_DIR = os.path.dirname(deo_backend.__file__)
-    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file} hin sample locations")
+    print(f"SQLITE: {SQLITE_FILE} hin sample locations")
     df = pd.read_sql(
-        "select * from hin_random_sample",
-        sqlite3.connect(sqlite_file),
+        "select * from car_ped_stops_hin_random_sample",
+        sqlite3.connect(SQLITE_FILE),
     )
     return df
 
 
 @lru_cache
 def df_raw_by_hin():
-    DATA_DIR = os.path.dirname(deo_backend.__file__)
-    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file} raw by hin")
+    print(f"SQLITE: {SQLITE_FILE} raw by hin")
     df = pd.read_sql(
         "select * from car_ped_stops_hin_pct",
-        sqlite3.connect(sqlite_file),
+        sqlite3.connect(SQLITE_FILE),
     )
     return df
 
@@ -117,24 +114,20 @@ def hin_geojson():
 
 @lru_cache
 def df_raw():
-    DATA_DIR = os.path.dirname(deo_backend.__file__)
-    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file} raw")
+    print(f"SQLITE: {SQLITE_FILE} raw")
     df = pd.read_sql(
         "select * from car_ped_stops_quarterly",
-        sqlite3.connect(sqlite_file),
+        sqlite3.connect(SQLITE_FILE),
     )
     return df
 
 
 @lru_cache
 def df_raw_reasons():
-    DATA_DIR = os.path.dirname(deo_backend.__file__)
-    sqlite_file = os.path.join(DATA_DIR, "open_data_philly.db")
-    print(f"SQLITE: {sqlite_file} raw reasons")
+    print(f"SQLITE: {SQLITE_FILE} raw reasons")
     df = pd.read_sql(
         "select * from car_ped_stops_quarterly_reason",
-        sqlite3.connect(sqlite_file),
+        sqlite3.connect(SQLITE_FILE),
     )
     return df
 
