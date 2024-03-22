@@ -138,10 +138,8 @@ def get_summary():
         else:
             trace.hovertemplate = "%{x}<br>%{y}% of city population<extra></extra>"
 
-    # Year before vs year after
-
-    value_before_deo = before_deo_filter.get_avg_monthly_value(police_action)
-    value_after_deo = after_deo_filter.get_avg_monthly_value(police_action)
+    value_before_deo = before_deo_filter.df["n_stopped"].sum()
+    value_after_deo = after_deo_filter.df["n_stopped"].sum()
 
     # demographic_breakdown_of_stops_graph
     df_date_before = before_deo_filter.df

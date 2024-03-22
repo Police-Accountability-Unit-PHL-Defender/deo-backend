@@ -23,3 +23,5 @@ poetry install
 poetry run python deo_backend/main.py
 poetry run python deo_backend/main_fastapi.py
 ```
+
+Check the `env.py` file to see the env vars that can be updated without a redeploy.
