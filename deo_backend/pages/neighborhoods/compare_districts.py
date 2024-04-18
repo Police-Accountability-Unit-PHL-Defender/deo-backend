@@ -109,7 +109,7 @@ def api_func(
             }
         )
 
-    districts_string = english_comma_separated([d["District"] for d in district_bars])
+    districts_string = english_comma_separated([d["District"][9:] for d in district_bars])
     fig = px.bar(
         pd.DataFrame(district_bars),
         x="District",
