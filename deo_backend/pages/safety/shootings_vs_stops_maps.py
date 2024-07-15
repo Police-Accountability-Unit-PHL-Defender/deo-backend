@@ -18,7 +18,7 @@ from models import QuarterHow
 from models import hin_geojson
 from models import hin_sample_locations_df
 from models import df_shootings_raw
-from demographics.constants import (
+from demographic_constants import (
     DEMOGRAPHICS_DISTRICT,
 )
 from models import AgeGroup

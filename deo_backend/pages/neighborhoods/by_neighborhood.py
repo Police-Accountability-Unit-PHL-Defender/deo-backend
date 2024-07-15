@@ -23,7 +23,7 @@ from models import FilteredDf
 from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, FIRST_QUARTER
 from models import Quarter
 from models import QuarterHow
-from demographics.constants import (
+from demographic_constants import (
     DEMOGRAPHICS_DISTRICT,
 )
 from fastapi_models import Endpoint, location_annotation, quarter_annotation
