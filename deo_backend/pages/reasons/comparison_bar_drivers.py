@@ -14,7 +14,7 @@ import sqlite3
 from models import PoliceAction
 from models import PoliceActionName
 from models import DfType
-from demographics.constants import (
+from demographic_constants import (
     DEMOGRAPHICS_DISTRICT,
 )
 from models import AgeGroup

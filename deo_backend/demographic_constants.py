@@ -1,14 +1,18 @@
 import pandas as pd
 from models import RacialGroup
 import os
+from deo_backend.env import DATA_DIR
 
-print(os.getcwd())
+
+
 POLICE_GEOGRAPHIES = pd.read_csv(
-    "deo_backend/demographics/police_geographies.csv", dtype=str
+    os.path.join(DATA_DIR, "demographics/police_geographies.csv"),
+    dtype=str,
 )
 
 DEMOGRAPHICS_DF = pd.read_csv(
-    "deo_backend/demographics/police_service_area.csv", dtype={"PSA_NUM": str}
+    os.path.join(DATA_DIR, "demographics/police_service_area.csv"),
+    dtype={"PSA_NUM": str},
 ).set_index("PSA_NUM")
 
 DEMOGRAPHICS_PSA = DEMOGRAPHICS_DF.to_dict("index")
