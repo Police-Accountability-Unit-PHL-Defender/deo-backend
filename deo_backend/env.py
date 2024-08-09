@@ -5,7 +5,7 @@ These are the two variables that you must update when you are updating the datab
 """
 MOST_RECENT_QUARTER_START = os.environ.get("MOST_RECENT_QUARTER_START", "2024-04-01")
 # ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-07-01T01_40_31.zip")
-ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-07-13T03_17_17.zip")
+ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-08-01T01_41_28.zip")
 
 
 def find_project_root(current_path):
