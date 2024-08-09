@@ -84,7 +84,7 @@ def police_districts_geojson():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     # https://opendata.arcgis.com/datasets/62ec63afb8824a15953399b1fa819df2_0.geojson
     # taken from https://opendataphilly.org/datasets/police-districts/
-    return json.load(open(os.path.join(DATA_DIR, "police_districts.geojson"), "r"))
+    return json.load(open(os.path.join(DATA_DIR, "maps/police_districts.geojson"), "r"))
 
 
 @lru_cache

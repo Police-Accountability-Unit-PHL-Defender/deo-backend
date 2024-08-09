@@ -1,4 +1,7 @@
 from pydantic import BaseModel
+import json
+from rtree import index
+from shapely.geometry import shape, Point
 from collections import defaultdict
 
 from tqdm import tqdm
@@ -62,11 +65,36 @@ def get_q_end_from_q_start_str(q_start_str):
     return q_end
 
 
+GEOJSON_PSA = json.load(open("deo_backend/maps/police_psas.geojson"))
+
+idx = index.Index()
+polygons = []
+for pos, feature in enumerate(GEOJSON_PSA["features"]):
+    polygon = shape(feature["geometry"])
+    polygons.append(
+        (polygon, feature["properties"])
+    )  # Store the polygon and its properties
+    idx.insert(pos, polygon.bounds)  # Insert polygon bounds into the spatial index
+
+
+# Function to find the feature containing a point
+def find_new_psa(lat, lng):
+    point = Point(lng, lat)
+    matches = list(idx.intersection(point.bounds))
+    for match in matches:
+        polygon, properties = polygons[match]
+        if polygon.contains(point):
+            return properties["PSA_NUM"][-1]
+    return "-1"
+
+
 class TableFromZip(BaseModel):
     name: str
     dtype_dict: dict[str, str]
     dtype_query: str
     dt_col: str
+    district_col: str = "districtoccur"
+    psa_col: str | None = "psa"
     processing_query: str
 
     @property
@@ -132,6 +160,40 @@ class TableFromZip(BaseModel):
         this_df["id"] = this_df.index
         this_df = this_df.sort_values("id").reset_index(drop=True)
         con = sqlite3.connect(":memory:")
+
+        districtoccurs = []
+        psas = []
+        for row in this_df.itertuples():
+            if getattr(row, self.district_col) in ["06", "09"]:
+                # map districts 6 and 9 to 9
+                districtoccur = "09"
+            else:
+                districtoccur = getattr(row, self.district_col)
+            districtoccurs.append(districtoccur)
+
+        this_df = this_df.rename(
+            columns={self.district_col: f"old_{self.district_col}"}
+        )
+        this_df[self.district_col] = districtoccurs
+
+        if self.psa_col:
+            for row in this_df.itertuples():
+                if getattr(row, self.district_col) in ["06", "09"]:
+                    if (
+                        getattr(row, self.district_col) == "06"
+                        and getattr(row, self.psa_col) == "1"
+                    ):
+                        # 061 got directly mapped to 092
+                        psa = "2"
+                    else:
+                        psa = find_new_psa(row.point_y, row.point_x)
+                else:
+                    psa = row.psa
+                psas.append(psa)
+
+            this_df = this_df.rename(columns={self.psa_col: f"old_{self.psa_col}"})
+            this_df[self.psa_col] = psas
+
         this_df.to_sql(self.name, if_exists="replace", con=con)
         return pd.read_sql(
             self.get_processing_query(most_recent_quarter_start_dt), con=con
@@ -422,6 +484,8 @@ CarPedStopsOnHin = TableFromZip(
 
 Shootings = TableFromZip(
     dt_col="date_",
+    district_col="dist",
+    psa_col=None,
     name="shootings",
     dtype_dict={
         "cartodb_id": "int64",
@@ -463,6 +527,7 @@ Shootings = TableFromZip(
             END || '-01T00:00:00.000000Z'
         ) AS quarter
         from shootings
+        WHERE date__local  <= '{most_recent_quarter_end_dt}'
         group by quarter, dist
         order by quarter,dist""",
 )

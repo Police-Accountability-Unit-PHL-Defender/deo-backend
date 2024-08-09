@@ -1,4 +1,6 @@
 import pandas as pd
+import traceback
+import pdb
 from models import ProcessZip
 import click
 import sqlite3
@@ -24,6 +26,7 @@ def add_quarterly_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def make_db(df_tables, sqlite_file):
     df_quarterly_reason = pd.concat(df_tables["car_ped_stops"])
+    print("Pulling Quarterly Stops")
     df_quarterly = (
         df_quarterly_reason.drop("violation_category", axis=1)
         .groupby(
@@ -86,16 +89,25 @@ def make_db(df_tables, sqlite_file):
 
 
 @click.command
-def main():
-    run = ProcessZip(
-        zip_filename=ZIP_FILENAME,
-        data_dir=DATA_DIR,
-        most_recent_quarter_start_dt=MOST_RECENT_QUARTER_START,
-    )
-    sqlite_file = os.path.join(DATA_DIR, f"open_data_philly_{run.db_name}.db")
-    df_tables = run.get_df_quarterly_reason_from_zipfiles()
-    make_db(df_tables, sqlite_file)
+@click.option("--debug", is_flag=True)
+def cli(debug):
+    try:
+        run = ProcessZip(
+            zip_filename=ZIP_FILENAME,
+            data_dir=DATA_DIR,
+            most_recent_quarter_start_dt=MOST_RECENT_QUARTER_START,
+        )
+        sqlite_file = os.path.join(DATA_DIR, f"open_data_philly_{run.db_name}.db")
+        df_tables = run.get_df_quarterly_reason_from_zipfiles()
+        make_db(df_tables, sqlite_file)
+    except KeyboardInterrupt:
+        raise
+    except Exception:
+        if debug:
+            traceback.print_exc()
+            pdb.post_mortem()
+        raise
 
 
 if __name__ == "__main__":
-    main()
+    cli()
