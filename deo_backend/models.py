@@ -21,8 +21,8 @@ if not os.path.exists(SQLITE_FILE):
 
 SEASON_QUARTER_MAPPING = {
     "Q1": "Jan-Mar",
-    "Q2": "Apr-June",
-    "Q3": "July-Sept",
+    "Q2": "Apr-Jun",
+    "Q3": "July-Sep",
     "Q4": "Oct-Dec",
 }
 SEASON_START_MAPPING = {"Q1": "Jan", "Q2": "Apr", "Q3": "Jul", "Q4": "Oct"}
@@ -121,6 +121,7 @@ def df_raw():
         "select * from car_ped_stops_quarterly",
         sqlite3.connect(SQLITE_FILE),
     )
+    breakpoint()
     return df
 
 
