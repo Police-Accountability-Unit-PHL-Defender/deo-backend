@@ -121,7 +121,6 @@ def df_raw():
         "select * from car_ped_stops_quarterly",
         sqlite3.connect(SQLITE_FILE),
     )
-    breakpoint()
     return df
 
 
