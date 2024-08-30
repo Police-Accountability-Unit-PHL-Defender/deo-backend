@@ -96,6 +96,7 @@ class TableFromZip(BaseModel):
     district_col: str = "districtoccur"
     psa_col: str | None = "psa"
     processing_query: str
+    regroupby_cols: list[str]
 
     @property
     def filename_prefix(self):
@@ -140,6 +141,7 @@ class TableFromZip(BaseModel):
         *,
         zip_filename_override,
         most_recent_quarter_start_dt,
+        remap_districts: bool = True,
     ):
         filename_raw = os.path.basename(filename)
         if zip_filename_override:
@@ -161,38 +163,42 @@ class TableFromZip(BaseModel):
         this_df = this_df.sort_values("id").reset_index(drop=True)
         con = sqlite3.connect(":memory:")
 
-        districtoccurs = []
-        psas = []
-        for row in this_df.itertuples():
-            if getattr(row, self.district_col) in ["06", "09"]:
-                # map districts 6 and 9 to 9
-                districtoccur = "09"
-            else:
-                districtoccur = getattr(row, self.district_col)
-            districtoccurs.append(districtoccur)
-
-        this_df = this_df.rename(
-            columns={self.district_col: f"old_{self.district_col}"}
-        )
-        this_df[self.district_col] = districtoccurs
-
-        if self.psa_col:
+        if remap_districts:
+            districtoccurs = []
+            psas = []
             for row in this_df.itertuples():
                 if getattr(row, self.district_col) in ["06", "09"]:
-                    if (
-                        getattr(row, self.district_col) == "06"
-                        and getattr(row, self.psa_col) == "1"
-                    ):
-                        # 061 got directly mapped to 092
-                        psa = "2"
-                    else:
-                        psa = find_new_psa(row.point_y, row.point_x)
+                    # map districts 6 and 9 to 9
+                    districtoccur = "09"
+                elif getattr(row, self.district_col) in ["6", "9"]:
+                    # map districts 6 and 9 to 9
+                    districtoccur = "9"
                 else:
-                    psa = row.psa
-                psas.append(psa)
+                    districtoccur = getattr(row, self.district_col)
+                districtoccurs.append(districtoccur)
 
-            this_df = this_df.rename(columns={self.psa_col: f"old_{self.psa_col}"})
-            this_df[self.psa_col] = psas
+            this_df = this_df.rename(
+                columns={self.district_col: f"old_{self.district_col}"}
+            )
+            this_df[self.district_col] = districtoccurs
+
+            if self.psa_col:
+                for row in this_df.itertuples():
+                    if getattr(row, self.district_col) in ["06", "09", "6", "9"]:
+                        if (
+                            getattr(row, self.district_col) in ["06", "6"]
+                            and getattr(row, self.psa_col) == "1"
+                        ):
+                            # 061 got directly mapped to 092
+                            psa = "2"
+                        else:
+                            psa = find_new_psa(row.point_y, row.point_x)
+                    else:
+                        psa = row.psa
+                    psas.append(psa)
+
+                this_df = this_df.rename(columns={self.psa_col: f"old_{self.psa_col}"})
+                this_df[self.psa_col] = psas
 
         this_df.to_sql(self.name, if_exists="replace", con=con)
         return pd.read_sql(
@@ -406,6 +412,15 @@ CarPedStops = TableFromZip(
         WHERE datetimeoccur_local  <= '{most_recent_quarter_end_dt}'
         GROUP by districtoccur,psa, quarter,race, gender, age_range, violation_category
         """,
+    regroupby_cols=[
+        "districtoccur",
+        "psa",
+        "quarter",
+        "Race",
+        "Gender",
+        "Age Range",
+        "violation_category",
+    ],
 )
 
 
@@ -478,8 +493,14 @@ CarPedStopsOnHin = TableFromZip(
         sum(n_stopped_locatable) as n_stopped_locatable
         FROM car_ped_stops_on_hin
         WHERE datetimeoccur_local  <= '{most_recent_quarter_end_dt}'
-        GROUP BY districtoccur,psa, districtoccur,psa, quarter, year
+        GROUP BY districtoccur,psa, quarter, year
         """,
+    regroupby_cols=[
+        "districtoccur",
+        "psa",
+        "quarter",
+        "year",
+    ],
 )
 
 Shootings = TableFromZip(
@@ -530,6 +551,10 @@ Shootings = TableFromZip(
         WHERE date__local  <= '{most_recent_quarter_end_dt}'
         group by quarter, dist
         order by quarter,dist""",
+    regroupby_cols=[
+        "quarter",
+        "districtoccur",
+    ],
 )
 
 
@@ -538,6 +563,7 @@ class ProcessZip(BaseModel):
     most_recent_quarter_start_dt: str
     zip_filename: str
     zip_filename_override_dict: dict[str, str] = {}
+    remap_districts: bool = True
 
     @property
     def zip_filepath(self):
@@ -555,7 +581,7 @@ class ProcessZip(BaseModel):
     def get_df_quarterly_reason_from_zipfiles(self):
         with open(self.zip_filepath, "rb") as file:
             zip_data = file.read()
-        dfs = defaultdict(list)
+        dfs = defaultdict(pd.DataFrame)
         print(self.zip_filename)
         with zipfile.ZipFile(io.BytesIO(zip_data), "r") as z:
             csv_files = sorted([f for f in z.namelist() if f.endswith(".csv")])
@@ -581,7 +607,13 @@ class ProcessZip(BaseModel):
                     filename,
                     zip_filename_override=zip_filename_override,
                     most_recent_quarter_start_dt=self.most_recent_quarter_start_dt,
+                    remap_districts=self.remap_districts,
                 )
-                dfs[table_from_zip.name].append(df)
+                dfs[table_from_zip.name] = (
+                    pd.concat([dfs[table_from_zip.name], df])
+                    .groupby(table_from_zip.regroupby_cols)
+                    .sum()
+                    .reset_index()
+                )
                 pbar.update()
         return dfs

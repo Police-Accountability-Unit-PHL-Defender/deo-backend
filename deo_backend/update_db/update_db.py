@@ -25,7 +25,7 @@ def add_quarterly_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_db(df_tables, sqlite_file):
-    df_quarterly_reason = pd.concat(df_tables["car_ped_stops"])
+    df_quarterly_reason = df_tables["car_ped_stops"]
     print("Pulling Quarterly Stops")
     df_quarterly = (
         df_quarterly_reason.drop("violation_category", axis=1)
@@ -65,7 +65,7 @@ def make_db(df_tables, sqlite_file):
         index=False,
     )
     # df_hin_by_quarter = get_hin_by_quarter_from_odp()
-    df_hin_by_quarter = pd.concat(df_tables["car_ped_stops_on_hin"])
+    df_hin_by_quarter = df_tables["car_ped_stops_on_hin"]
     df_hin_by_quarter = add_quarterly_columns(df_hin_by_quarter)
     df_hin_by_quarter.to_sql(
         "car_ped_stops_hin_pct",
@@ -76,7 +76,7 @@ def make_db(df_tables, sqlite_file):
 
     print("Get Shooting data")
     # df_shootings = get_shootings_from_odp()
-    df_shootings = pd.concat(df_tables["shootings"])
+    df_shootings = df_tables["shootings"]
     df_shootings = add_quarterly_columns(df_shootings)
 
     df_shootings.to_sql(
@@ -90,12 +90,19 @@ def make_db(df_tables, sqlite_file):
 
 @click.command
 @click.option("--debug", is_flag=True)
-def cli(debug):
+@click.option(
+    "--remap-districts/--do-not-remap-districts",
+    is_flag=True,
+    default=True,
+    show_default=True,
+)
+def cli(debug, remap_districts):
     try:
         run = ProcessZip(
             zip_filename=ZIP_FILENAME,
             data_dir=DATA_DIR,
             most_recent_quarter_start_dt=MOST_RECENT_QUARTER_START,
+            remap_districts=remap_districts,
         )
         sqlite_file = os.path.join(DATA_DIR, f"open_data_philly_{run.db_name}.db")
         df_tables = run.get_df_quarterly_reason_from_zipfiles()
