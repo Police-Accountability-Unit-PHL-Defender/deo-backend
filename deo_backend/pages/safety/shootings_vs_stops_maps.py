@@ -324,13 +324,13 @@ DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Decreas
 def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increases in traffic stops to the 5 districts with the largest percent decreases in shootings. This map attempts to see whether the districts with the largest percent increases in traffic stops also had the largest percent decreases in shootings. Here, only one district, the 18th district, had such an outcome, with the second largest percent increase of traffic stops and the seconcd largest percent decrease in shootings. """
+    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increases in traffic stops to the 5 districts with the largest percent decreases in shootings. This map attempts to see whether the districts with the largest percent increases in traffic stops also had the largest percent decreases in shootings. Here, only one district, the 18th district, had such an outcome, with the second largest percent increase of traffic stops and the second largest percent decrease in shootings."""
 
 
 def get_text_sentence_deo(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decreases in traffic stops to the 5 districts with the largest percent increases in shootings. This map attempts to see whether the districts with the largest percent decreases in traffic stops also had the largest percent increases in shootings."
+    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decreases in traffic stops to the 5 districts with the largest percent increases in shootings. This map attempts to see whether the districts with the largest percent decreases in traffic stops also had the largest percent increases in shootings. Here, only one district, the 3rd district, had such an outcome, with the second largest percent decrease of traffic stops and the third largest percent increase in shootings."
 
 
 @router.get(API_URL)
