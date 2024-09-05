@@ -32,9 +32,7 @@ from dash_helpers import (
     Subtitle,
     TimeAggregationChoice,
 )
-from demographics.constants import (
-    DEMOGRAPHICS_TOTAL,
-)
+from demographic_constants import DEMOGRAPHICS_TOTAL
 import os
 
 from fastapi import APIRouter, Query
