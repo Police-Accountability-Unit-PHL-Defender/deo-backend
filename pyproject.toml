@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{ include = "deo_backend" }]
 
 [tool.poetry.dependencies]
-python = "^3.10.4"
+python = "^3.10.14"
 dash = "^2.14.0"
 dash-ag-grid = "^2.4.0"
 pandas = "^2.1.1"
@@ -20,6 +20,8 @@ uvicorn = "^0.27.0.post1"
 [tool.poetry.group.dev.dependencies]
 httpx = "^0.25.0"
 tqdm = "^4.66.2"
+shapely = "^2.0.5"
+rtree = "^1.3.0"
 
 [build-system]
 requires = ["poetry-core"]

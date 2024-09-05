@@ -21,6 +21,8 @@ origins = [
     "https://deo-api.onrender.com",
     "http://localhost:10000",
     "http://localhost:3000",
+    "https://deo-web-dashboard-beta.vercel.app",
+    os.environ.get("FRONTEND_SERVER"),
 ]
 
 os.environ["SERVER_TYPE"] = "fastapi"

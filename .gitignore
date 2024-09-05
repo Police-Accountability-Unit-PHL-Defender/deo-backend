@@ -1,2 +1,5 @@
 poetry.lock
+.envrc
+**/*.ipynb_checkpoints
 **/*.pyc
+**/*.zip

@@ -18,7 +18,7 @@ from models import QuarterHow
 from models import hin_geojson
 from models import hin_sample_locations_df
 from models import df_shootings_raw
-from demographics.constants import (
+from demographic_constants import (
     DEMOGRAPHICS_DISTRICT,
 )
 from models import AgeGroup
@@ -103,8 +103,13 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
         increase_col, change_type="increase"
     )
     df_shootings = df_shootings_raw()
-    df_year_start = FilteredDf(start_date=start[0], end_date=start[1]).df
-    df_year_start = df_year_start.merge(
+    df_stops_start = (
+        FilteredDf(start_date=start[0], end_date=start[1])
+        .df.groupby(["quarter", "districtoccur"])["n_stopped"]
+        .sum()
+        .reset_index()
+    )
+    df_year_start = df_stops_start.merge(
         df_shootings[["districtoccur", "quarter", "n_shootings", "n_outside"]],
         on=["quarter", "districtoccur"],
         how="left",
@@ -119,8 +124,13 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
             }
         )
     )
-    df_year_end = FilteredDf(start_date=end[0], end_date=end[1]).df
-    df_year_end = df_year_end.merge(
+    df_stops_end = (
+        FilteredDf(start_date=end[0], end_date=end[1])
+        .df.groupby(["quarter", "districtoccur"])["n_stopped"]
+        .sum()
+        .reset_index()
+    )
+    df_year_end = df_stops_end.merge(
         df_shootings, on=["quarter", "districtoccur"], how="left"
     )
     df_year_end_by_district = (
@@ -266,12 +276,12 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
         is_top_5_increase = bool(rows.iloc[0]["is_top_5_increase"])
 
         row = rows.iloc[0]
-        feature["properties"][
-            f"is_top_{decrease_col_obj.column}_change"
-        ] = is_top_5_decrease
-        feature["properties"][
-            f"is_top_{increase_col_obj.column}_change"
-        ] = is_top_5_increase
+        feature["properties"][f"is_top_{decrease_col_obj.column}_change"] = (
+            is_top_5_decrease
+        )
+        feature["properties"][f"is_top_{increase_col_obj.column}_change"] = (
+            is_top_5_increase
+        )
         feature["properties"]["hovertext"] = hovertext(
             row,
         )
@@ -314,13 +324,13 @@ DEO_TITLE = "Before and After Driving Equality: Districts with Largest % Decreas
 def get_text_sentence_surge(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increases in traffic stops to the 5 districts with the largest percent decreases in shootings. This map attempts to see whether the districts with the largest percent increases in traffic stops also had the largest percent decreases in shootings. Here, only one district, the 18th district, had such an outcome, with the 2nd largest percent increase of traffic stops and the third largest percent decrease in shootings. """
+    return f"""Comparing 2018 to 2019, the Philadelphia Police Department increased traffic stops across nearly all 21 districts by {stops_diff:,} stops, a {pct_diff:.01f}% increase. The map below compares the 5 districts with the largest percent increases in traffic stops to the 5 districts with the largest percent decreases in shootings. This map attempts to see whether the districts with the largest percent increases in traffic stops also had the largest percent decreases in shootings. Here, only one district, the 18th district, had such an outcome, with the second largest percent increase of traffic stops and the second largest percent decrease in shootings."""
 
 
 def get_text_sentence_deo(n_stops_start: int, n_stops_end: int):
     stops_diff = n_stops_end - n_stops_start
     pct_diff = stops_diff / n_stops_start * 100
-    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decreases in traffic stops to the 5 districts with the largest percent increases in shootings. This map attempts to see whether the districts with the largest percent decreases in traffic stops also had the largest percent increases in shootings."
+    return f"Comparing before and after Driving Equality, the Philadelphia Police Department decreased traffic stops by {-1*stops_diff:,} stops, a {-1*pct_diff:.01f}% decrease. The map below compares the 5 districts with the largest percent decreases in traffic stops to the 5 districts with the largest percent increases in shootings. This map attempts to see whether the districts with the largest percent decreases in traffic stops also had the largest percent increases in shootings. Here, only one district, the 3rd district, had such an outcome, with the second largest percent decrease of traffic stops and the third largest percent increase in shootings."
 
 
 @router.get(API_URL)

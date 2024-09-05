@@ -15,7 +15,7 @@ from models import PoliceAction
 from models import before_deo_filter_hin, after_deo_filter_hin
 from models import PoliceActionName
 from models import DfType
-from demographics.constants import (
+from demographic_constants import (
     DEMOGRAPHICS_DISTRICT,
 )
 from models import AgeGroup
