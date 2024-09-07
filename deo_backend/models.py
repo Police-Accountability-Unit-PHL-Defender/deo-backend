@@ -204,10 +204,17 @@ class FilteredDf:
             case TimeAggregation.quarter:
                 return self.date_range_str_long
 
-    def get_date_range_str(self, time_aggregation: TimeAggregation):
+    def get_date_range_str(
+        self,
+        time_aggregation: TimeAggregation,
+        /,
+        *,
+        start_year_override: str | None = None,
+        end_year_override: str | None = None,
+    ):
         match time_aggregation:
             case TimeAggregation.year:
-                return f"{self.quarters.years[0]} through {self.quarters.years[-1]}"
+                return f"{start_year_override or self.quarters.years[0]} through {end_year_override or self.quarters.years[-1]}"
             case TimeAggregation.quarter:
                 return self.date_range_str
 
