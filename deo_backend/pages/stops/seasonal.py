@@ -111,9 +111,21 @@ def stops__seasonal(
         .reset_index()
     )
 
-    df_geo_quarter_select = (
+    df_geo_quarter_year_select = (
         df_geo_total_all_time[df_geo_total_all_time.q_str.isin(q_over_year_select)]
-        .groupby(df_geo_total_all_time.year)[police_action.sql_column]
+        .groupby(["year", "q_str"])[police_action.sql_column]
+        .sum()
+        .reset_index()
+    )
+    # Filter out any years that don't have all the selected quarters
+    df_geo_quarter_select = (
+        df_geo_quarter_year_select.set_index("year")
+        .loc[
+            df_geo_quarter_year_select.groupby("year")["q_str"].nunique()
+            == len(q_over_year_select)
+        ]
+        .reset_index()
+        .groupby("year")[police_action.sql_column]
         .sum()
     ).reset_index()
 
@@ -127,7 +139,7 @@ def stops__seasonal(
         df_geo_quarter_select,
         x="year",
         y=police_action.sql_column,
-        title=f"Number of PPD {police_action.noun.title()} in {geo_level_str} for {q_over_year_select_str} from {geo_filter.get_date_range_str(TimeAggregation.year)}",
+        title=f"Number of PPD {police_action.noun.title()} in {geo_level_str} for {q_over_year_select_str} from {geo_filter.get_date_range_str(TimeAggregation.year, end_year_override=df_geo_quarter_select.year.max())}",
         labels={
             police_action.sql_column: f"Number of {police_action.noun.title()}",
             "year": f"Times of Year: {q_over_year_select_str}",
