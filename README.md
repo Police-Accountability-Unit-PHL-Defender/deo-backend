@@ -33,4 +33,5 @@ The website currently runs on a copy of the data from Open Data Philly (a zipfil
 1. Copy zipfile to the `deo_backend/data` folder.
 2. Update the zip filename and quarter start date env vars in `deo_backend/env.py`
 3. Execute `poetry run python deo_backend/update_db/update_db.py`
+4. Change the MOST_RECENT_QUARTER env var in both `env.py` and update the env var for deo-web-dashboard in vercel!
 
