@@ -33,4 +33,7 @@ The website currently runs on a copy of the data from Open Data Philly (a zipfil
 1. Copy zipfile to the `deo_backend/data` folder.
 2. Update the zip filename and quarter start date env vars in `deo_backend/env.py`
 3. Execute `poetry run python deo_backend/update_db/update_db.py`
+4. Go to render.com and Resume the beta web service. Update the front-end env var MOST_RECENT_QUARTER to the new quarter.
+5. Share the beta link.
+6. Upon confirmation, update the production web service and update the front-end env var MOST_RECENT_QUARTER to the new quarter.
 
