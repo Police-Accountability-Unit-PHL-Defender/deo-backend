@@ -3,9 +3,8 @@ import os
 """
 These are the two variables that you must update when you are updating the database.
 """
-MOST_RECENT_QUARTER_START = os.environ.get("MOST_RECENT_QUARTER_START", "2024-04-01")
-# ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-07-01T01_40_31.zip")
-ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-08-01T01_41_28.zip")
+MOST_RECENT_QUARTER_START = os.environ.get("MOST_RECENT_QUARTER_START", "2024-07-01")
+ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2024-10-24T01_17_41.zip")
 
 
 def find_project_root(current_path):
