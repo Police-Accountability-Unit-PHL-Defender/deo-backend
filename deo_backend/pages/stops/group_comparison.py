@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import TimeAggregation
 from typing import Annotated
 from fastapi import APIRouter, Query
 from models import (
@@ -16,9 +17,6 @@ from models import RacialGroup
 from dash_helpers import (
     location_dropdown,
     qyear_dropdown,
-    demographic_dropdown,
-    Subtitle,
-    TimeAggregationChoice,
 )
 from models import Quarter
 import plotly.express as px
@@ -212,7 +210,7 @@ def q2_groups(
     )
     fig = px.bar(
         df_groups,
-        title=f"Number of PPD {police_action.noun.title()} in {geo_filter.geography.string}, Comparing Group 1 to Group 2, from {geo_filter.date_range_str}",
+        title=f"Number of PPD {police_action.noun.title()} in {geo_filter.geography.string}, Comparing Group 1 to Group 2, from {geo_filter.get_date_range_str(TimeAggregation.quarter)}",
         x="season",
         y=police_action.sql_column,
         labels={

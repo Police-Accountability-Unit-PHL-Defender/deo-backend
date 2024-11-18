@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import TimeAggregation
 import uuid
 from typing import Literal
 from typing import Annotated
@@ -123,9 +124,9 @@ def api_func(
     ).round(1)
 
     def _get_bar_fig(column, title="", labels={}, hovertemplate_suffix=""):
-        labels[
-            "districtoccur"
-        ] = "Majority Non-White Districts → Majority White Districts"
+        labels["districtoccur"] = (
+            "Majority Non-White Districts → Majority White Districts"
+        )
 
         fig = px.bar(
             df_grouped.sort_values("whiteness"),
@@ -157,7 +158,7 @@ def api_func(
 
     fig = _get_bar_fig(
         f"{police_action.sql_column}",
-        title=f"Number of {police_action.noun.title()} in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
+        title=f"Number of {police_action.noun.title()} in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
         labels={
             police_action.sql_column: f"Number of {police_action.noun.title()}",
         },
@@ -165,13 +166,13 @@ def api_func(
     )
     fig2 = _get_bar_fig(
         "intrusion_rate",
-        title=f"PPD Intrusion Rate During Traffic Stops in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
+        title=f"PPD Intrusion Rate During Traffic Stops in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
         labels={"intrusion_rate": "Intrusion Rate (%)"},
         hovertemplate_suffix="%{customdata[1]:,.0f} intrusions<br>%{y}% intrusion rate",
     )
     fig3 = _get_bar_fig(
         "contraband_hit_rate",
-        title=f"Contraband Hit Rate in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.date_range_str}",
+        title=f"Contraband Hit Rate in Majority Non-White Districts vs. Majority White Districts from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
         labels={"contraband_hit_rate": "Contraband Hit Rate (%)"},
         hovertemplate_suffix="%{y}% contraband hit rate",
     )

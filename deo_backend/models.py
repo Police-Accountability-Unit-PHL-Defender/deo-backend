@@ -154,6 +154,7 @@ class FilteredDf:
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         df_type: DfType = DfType.stops,
+        error_if_empty: bool = True,
     ):
         self.location = location
         self.start_date = start_date
@@ -187,22 +188,13 @@ class FilteredDf:
 
             # Graph1
             self.df = self.df[self.df.quarter.isin(self.quarters.year_quarters)]
-            if self.df.empty:
+            if self.df.empty and error_if_empty:
                 raise ValueError("Df is empty")
         else:
             self.quarters = Quarters()
 
-        self.date_range_str = (
-            f"{self.quarters.start_str} through {self.quarters.end_str}"
-        )
-        self.date_range_str_long = f"the start of {self.quarters.start_str} through the end of {self.quarters.end_str}"
-
     def get_date_range_str_long(self, time_aggregation: TimeAggregation):
-        match time_aggregation:
-            case TimeAggregation.year:
-                return f"the start of {self.quarters.years[0]} through the end of {self.quarters.years[-1]}"
-            case TimeAggregation.quarter:
-                return self.date_range_str_long
+        self.quarters.get_date_range_str_long(time_aggregation)
 
     def get_date_range_str(
         self,
@@ -212,11 +204,11 @@ class FilteredDf:
         start_year_override: str | None = None,
         end_year_override: str | None = None,
     ):
-        match time_aggregation:
-            case TimeAggregation.year:
-                return f"{start_year_override or self.quarters.years[0]} through {end_year_override or self.quarters.years[-1]}"
-            case TimeAggregation.quarter:
-                return self.date_range_str
+        return self.quarters.get_date_range_str(
+            time_aggregation,
+            start_year_override=start_year_override,
+            end_year_override=end_year_override,
+        )
 
     def get_avg_monthly_value(self, police_action):
         total = self.df[police_action.sql_column].sum()
@@ -251,6 +243,23 @@ class Quarters:
         self.start_str = self.values[0].month_and_year(how=QuarterHow.start)
         self.end_str = self.values[-1].month_and_year(how=QuarterHow.end)
         self.years = [x.year for x in self.values]
+
+    def get_date_range_str_long(self, time_aggregation: TimeAggregation):
+        return f"the start of {self.start_str} through the end of {self.end_str}"
+
+    def get_date_range_str(
+        self,
+        time_aggregation: TimeAggregation,
+        /,
+        *,
+        start_year_override: str | None = None,
+        end_year_override: str | None = None,
+    ):
+        match time_aggregation:
+            case TimeAggregation.year:
+                return f"{start_year_override or self.years[0]} through {end_year_override or self.years[-1]}"
+            case TimeAggregation.quarter:
+                return f"{self.start_str} through {self.end_str}"
 
 
 class Quarter:

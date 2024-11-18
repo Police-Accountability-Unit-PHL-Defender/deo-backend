@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input, no_update
+from models import TimeAggregation
 from models import QuarterHow
 import numpy as np
 import uuid
@@ -202,7 +203,7 @@ def api_func(
         labels={
             "percentage": "Intrusion Rate (%)",
         },
-        title=f"Intrusion Rates by {demographic_category} in {geo_level_str} from {geo_filtered.date_range_str}",
+        title=f"Intrusion Rates by {demographic_category} in {geo_level_str} from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
     )
     for trace in fig.data:
         trace.hovertemplate = "%{x}<br>%{y}% intrusion rate"
@@ -256,7 +257,7 @@ def api_func(
     fig2 = px.bar(
         df_percent_action_by_demo.sort_values(demographic_category),
         x=demographic_category.value,
-        title=f"Intrusions Resulting in No Contraband by {demographic_category.value} in {geo_filtered.geography.string} from {geo_filtered.date_range_str}",
+        title=f"Intrusions Resulting in No Contraband by {demographic_category.value} in {geo_filtered.geography.string} from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
         labels={
             f"{police_action.sql_column}_no_contraband": f"Number of {police_action.noun.title()} without Contraband"
         },
@@ -308,7 +309,7 @@ def api_func(
         x=demographic_category.value,
         y="percentage_found",
         labels={"percentage_found": "Contraband Hit Rate (%)"},
-        title=f"Contraband Hit Rates by {demographic_category} in {geo_filtered.geography.string} from {geo_filtered.date_range_str}",
+        title=f"Contraband Hit Rates by {demographic_category} in {geo_filtered.geography.string} from {geo_filtered.get_date_range_str(TimeAggregation.quarter)}",
     )
     for trace in fig3.data:
         trace.hovertemplate = "%{x}<br>%{y:,}% contraband hit rate<br>"
@@ -348,7 +349,7 @@ def api_func(
         text_markdown=f"""
             In {geo_level_str}:
 
-            When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles from {geo_filtered.date_range_str_long}.
+            When making traffic stops, Philadelphia police intruded upon <span>{pct_rate:.1f}%</span> of people and/or vehicles from {geo_filtered.get_date_range_str_long(TimeAggregation.quarter)}.
 
             During these intrusions, Philadelphia police did not find any contraband <span>{pct_not_found:.1f}%</span> of the time.
         """,

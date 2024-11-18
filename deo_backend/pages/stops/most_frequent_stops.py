@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import TimeAggregation
 from models import QuarterHow
 from models import PoliceAction
 from models import FilteredDf
@@ -122,6 +123,6 @@ def stops__most_frequent_stops(
             defaultColDef={"resizable": True, "sortable": True, "filter": True},
             dashGridOptions={"pagination": False},
         ),
-        text_sentence1=f"Demographic Groups Stopped by PPD in {geo_filter.geography.string} from {geo_filter.date_range_str}",
-        text_sentence2=f"Philadelphia police most frequently {police_action.past_tense} <span>{race.title()} {gender.lower()} {age_range}</span> year old drivers in {geo_filter.geography.string} from {geo_filter.date_range_str_long}, or <span>{amount}%</span> of stops.",
+        text_sentence1=f"Demographic Groups Stopped by PPD in {geo_filter.geography.string} from {geo_filter.get_date_range_str(TimeAggregation.quarter)}",
+        text_sentence2=f"Philadelphia police most frequently {police_action.past_tense} <span>{race.title()} {gender.lower()} {age_range}</span> year old drivers in {geo_filter.geography.string} from {geo_filter.get_date_range_str_long(TimeAggregation.quarter)}, or <span>{amount}%</span> of stops.",
     )
