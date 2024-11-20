@@ -194,7 +194,7 @@ class FilteredDf:
             self.quarters = Quarters()
 
     def get_date_range_str_long(self, time_aggregation: TimeAggregation):
-        self.quarters.get_date_range_str_long(time_aggregation)
+        return self.quarters.get_date_range_str_long(time_aggregation)
 
     def get_date_range_str(
         self,
