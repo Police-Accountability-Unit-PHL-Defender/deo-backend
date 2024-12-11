@@ -1,6 +1,7 @@
 from dash import Dash, html, dcc, callback, Output, Input
 from models import english_comma_separated
 from models import QuarterHow
+from models import Quarters
 import uuid
 from typing import Literal
 from typing import Annotated
@@ -89,8 +90,9 @@ LAYOUT = LAYOUT + [
 def api_func(
     police_action: Annotated[PoliceActionName, Query(description="Police Action")],
     districts: Annotated[
-        list[str], Query(description="A set of districts to compare to each other")
-    ],
+        list[str] | None,
+        Query(description="A set of districts to compare to each other"),
+    ] = None,
     start_qyear: quarter_annotation = FIRST_QUARTER,
     end_qyear: quarter_annotation = MOST_RECENT_QUARTER,
 ):
@@ -98,25 +100,27 @@ def api_func(
     police_action = PoliceAction.from_value(police_action)
     district_bars = []
 
-    for district in districts:
+    for district in districts or []:
         geo_filter = FilteredDf(
-            start_date=start_qyear, end_date=end_qyear, location=district
+            start_date=start_qyear,
+            end_date=end_qyear,
+            location=district,
+            error_if_empty=False,
         )
         district_bars.append(
             {
-                "District": geo_filter.geography.string,
+                "District": geo_filter.geography.district,
                 police_action.noun: geo_filter.df[police_action.sql_column].sum(),
             }
         )
 
-    districts_string = english_comma_separated(
-        [d["District"][9:] for d in district_bars]
-    )
+    districts_string = english_comma_separated([d["District"] for d in district_bars])
+    quarters = Quarters(start_date=start_qyear, end_date=end_qyear)
     fig = px.bar(
-        pd.DataFrame(district_bars),
+        pd.DataFrame(district_bars, columns=["District", police_action.noun]),
         x="District",
         y=police_action.noun,
-        title=f"Number of {police_action.noun.title()} in Districts {districts_string} from {geo_filter.get_date_range_str(TimeAggregation.quarter)}",
+        title=f"Number of {police_action.noun.title()} in Districts {districts_string} from {quarters.get_date_range_str(TimeAggregation.quarter)}",
         labels={
             police_action.noun: f"Number of {police_action.noun.title()}",
         },

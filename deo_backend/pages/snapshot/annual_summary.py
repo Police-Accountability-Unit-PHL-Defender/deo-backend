@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import TimeAggregation
 import numpy as np
 from plotly.graph_objs import Figure
 import uuid
@@ -121,7 +122,7 @@ def get_summary():
     fig = px.bar(
         df_melted.sort_values(demographic_category),
         x=demographic_category,
-        title=f"Racial Demographics of Traffic Stops vs. City Population from {date_filter.date_range_str}",
+        title=f"Racial Demographics of Traffic Stops vs. City Population from {date_filter.get_date_range_str(TimeAggregation.quarter)}",
         y="pcts",
         labels={
             "pcts": "Percentage (%)",
@@ -261,7 +262,7 @@ def get_summary():
 
 
 def get_text_sentence_last_year(summary_data):
-    return f"From {summary_data.filtered_df.date_range_str_long}, police made a total of <span>{summary_data.n_total:,}</span> traffic stops in Philadelphia, or an average of <span>{summary_data.avg_monthly_stops:,}</span> traffic stops per month."
+    return f"From {summary_data.filtered_df.get_date_range_str_long(TimeAggregation.quarter)}, police made a total of <span>{summary_data.n_total:,}</span> traffic stops in Philadelphia, or an average of <span>{summary_data.avg_monthly_stops:,}</span> traffic stops per month."
 
 
 def get_text_sentence_pct_deo(summary_data):
@@ -289,7 +290,7 @@ def get_text_sentence_num_deo(summary_data):
 
 def get_text_sentence_contraband(summary_data):
     return f"""
-        From {summary_data.filtered_df.date_range_str_long}, Philadelphia police did not find any contraband <span>{summary_data.pct_not_found:.1f}%</span> of the time they intruded on people and/or vehicles. 
+        From {summary_data.filtered_df.get_date_range_str_long(TimeAggregation.quarter)}, Philadelphia police did not find any contraband <span>{summary_data.pct_not_found:.1f}%</span> of the time they intruded on people and/or vehicles. 
         """
 
 
