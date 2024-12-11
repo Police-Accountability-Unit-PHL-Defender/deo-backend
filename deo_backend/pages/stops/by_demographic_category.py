@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from models import TimeAggregation
 from dash_helpers import (
     location_dropdown,
     qyear_dropdown,
@@ -104,7 +105,7 @@ def api_func(
         labels={
             "percentage": "Percentage (%)",
         },
-        title=f"Percent of PPD {police_action.noun.title()} in {geo_filter.geography.string} by {demographic_category} from {geo_filter.date_range_str}",
+        title=f"Percent of PPD {police_action.noun.title()} in {geo_filter.geography.string} by {demographic_category} from {geo_filter.get_date_range_str(TimeAggregation.quarter)}",
         hover_data=[police_action.sql_column],
     )
     for trace in fig.data:
