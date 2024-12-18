@@ -1,4 +1,5 @@
 from fastapi.responses import RedirectResponse
+from models import MOST_RECENT_QUARTER
 from fastapi import status
 
 import os
@@ -41,6 +42,11 @@ app.add_middleware(
 @app.get("/")
 def read_main():
     return RedirectResponse(url="/docs", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/settings")
+def settings():
+    return {"mostRecentQuarter": MOST_RECENT_QUARTER}
 
 
 [app.include_router(router) for router in ROUTERS.values()]
