@@ -10,7 +10,7 @@ from enum import Enum
 from enum import auto
 from functools import lru_cache
 import deo_backend
-from env import DB_FILENAME, MOST_RECENT_QUARTER_START
+from env import DB_FILENAME
 
 DATA_DIR = os.path.dirname(deo_backend.__file__)
 
@@ -27,6 +27,11 @@ SEASON_QUARTER_MAPPING = {
 }
 SEASON_START_MAPPING = {"Q1": "Jan", "Q2": "Apr", "Q3": "Jul", "Q4": "Oct"}
 SEASON_END_MAPPING = {"Q1": "Mar", "Q2": "Jun", "Q3": "Sep", "Q4": "Dec"}
+
+MOST_RECENT_QUARTER_START = pd.read_sql(
+    "select most_recent_quarter from settings limit 1", sqlite3.connect(SQLITE_FILE)
+).iloc[0]["most_recent_quarter"]
+
 
 ALL_QUARTERS = pd.date_range(
     "2013-12-31", MOST_RECENT_QUARTER_START, freq="QS-JAN", inclusive="right"
