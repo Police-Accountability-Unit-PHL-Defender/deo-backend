@@ -247,19 +247,6 @@ def shootings_vs_stops_map(start, end, title, decrease_col, increase_col):
             increase_sentence if increase_col_obj.is_shootings else decrease_sentence
         )
 
-        """
-
-
-
-        if is_top_5_decrease:
-            first_sentence = f"<b>{decrease_str} largest % decrease in {decrease_col_str} ({pct_change_for_decrease:.1f}%)"
-            pct_change_str = "decrease" if pct_change_for_increase < 0 else "increase"
-            second_sentence = f"<b>{abs(pct_change_for_increase):.1f}% {pct_change_str} in {increase_col_str}"
-        elif is_top_5_increase:
-            first_sentence = f"<b>{increase_str} largest % increase in {increase_col_str} ({pct_change_for_increase:.1f}%)"
-            pct_change_str = "decrease" if pct_change_for_decrease < 0 else "increase"
-            second_sentence = f"<b>{abs(pct_change_for_decrease):.1f}% {pct_change_str} in {decrease_col_str}"
-        """
         return f"<b>District {row['districtoccur']}<br>" + "<br>".join(
             [first_sentence, second_sentence]
         )

@@ -1,7 +1,8 @@
 from pydantic import BaseModel
+from shapely import wkb
 import json
 from rtree import index
-from shapely.geometry import shape, Point
+from shapely.geometry import shape
 from collections import defaultdict
 
 from tqdm import tqdm
@@ -15,6 +16,41 @@ import sqlite3
 import pandas as pd
 
 import requests
+
+
+def get_quarter_start_date(quarter_str):
+    # Extract the year and quarter
+    year, quarter = quarter_str.split("-Q")
+    year = int(year)
+    quarter = int(quarter)
+
+    # Map quarters to their starting months
+    quarter_start_month = {1: 1, 2: 4, 3: 7, 4: 10}
+
+    # Get the starting month for the quarter
+    start_month = quarter_start_month[quarter]
+
+    # Return the start date as a string in YYYY-MM-DD format
+    return f"{year}-{start_month:02d}-01"
+
+
+def get_previous_quarter(dt):
+    # Get today's date
+
+    # Calculate the current quarter
+    current_quarter = (dt.month - 1) // 3 + 1
+
+    # Determine the previous quarter
+    if current_quarter == 1:
+        # If current quarter is Q1, the previous quarter is Q4 of the last year
+        previous_quarter = 4
+        year = dt.year - 1
+    else:
+        # Otherwise, subtract one quarter within the same year
+        previous_quarter = current_quarter - 1
+        year = dt.year
+
+    return f"{year}-Q{previous_quarter}"
 
 
 # Used to get dtype dict
@@ -78,8 +114,7 @@ for pos, feature in enumerate(GEOJSON_PSA["features"]):
 
 
 # Function to find the feature containing a point
-def find_new_psa(lat, lng):
-    point = Point(lng, lat)
+def find_new_psa(point):
     matches = list(idx.intersection(point.bounds))
     for match in matches:
         polygon, properties = polygons[match]
@@ -192,7 +227,8 @@ class TableFromZip(BaseModel):
                             # 061 got directly mapped to 092
                             psa = "2"
                         else:
-                            psa = find_new_psa(row.point_y, row.point_x)
+                            point = wkb.loads(row.the_geom, hex=True)
+                            psa = find_new_psa(point)
                     else:
                         psa = row.psa
                     psas.append(psa)
@@ -201,6 +237,7 @@ class TableFromZip(BaseModel):
                 this_df[self.psa_col] = psas
 
         this_df.to_sql(self.name, if_exists="replace", con=con)
+
         return pd.read_sql(
             self.get_processing_query(most_recent_quarter_start_dt), con=con
         )
@@ -560,8 +597,8 @@ Shootings = TableFromZip(
 
 class ProcessZip(BaseModel):
     data_dir: str
-    most_recent_quarter_start_dt: str
     zip_filename: str
+    most_recent_quarter_override: str | None = None
     zip_filename_override_dict: dict[str, str] = {}
     remap_districts: bool = True
 
@@ -584,6 +621,54 @@ class ProcessZip(BaseModel):
         dfs = defaultdict(pd.DataFrame)
         print(self.zip_filename)
         with zipfile.ZipFile(io.BytesIO(zip_data), "r") as z:
+            if not self.most_recent_quarter_override:
+                most_recent_quarters = {}
+                # Assumes the folder structure is csv/{table}. If there are any other folders, this will not work.
+                # Pulls the most recent quarter from the summary.json file for each table
+                # which has a last_dt field.
+                # So if the last_dt for all tables in something like 2024-12-05, it will use 2024-Q3
+                tables = [
+                    f[:-1]
+                    for f in z.namelist()
+                    if f.replace("csvs/", "").endswith("/") and f.startswith("csvs/")
+                ]
+                for table in tables:
+                    if os.path.join(table, "summary.json") in z.namelist():
+                        summary = json.load(z.open(os.path.join(table, "summary.json")))
+                        if not summary.get("last_dt", None):
+                            raise ValueError(
+                                f"'last_dt' not found in {table}/summary.json"
+                            )
+                        most_recent_quarter = get_previous_quarter(
+                            pd.to_datetime(summary["last_dt"])
+                        )
+                    else:
+                        raise ValueError(
+                            f"File {table}/summary.json not found so most recent quarter can't be guessed. You must set the most recent quarter to use."
+                            + f" You might want to add the following cli option: `--most-recent-quarter-override '{get_previous_quarter(datetime.today())}'`"
+                        )
+
+                    most_recent_quarters[table] = most_recent_quarter
+                unique_quarters = set(
+                    [most_recent_quarters.get(table, None) for table in tables]
+                )
+                if len(unique_quarters) > 1:
+                    raise ValueError(
+                        f"Multiple unique quarter starts found: {unique_quarters}"
+                    )
+                elif len(unique_quarters) == 0:
+                    raise ValueError(
+                        f"No unique quarter starts found for tables {tables}"
+                    )
+                else:
+                    most_recent_quarter = list(unique_quarters.values())[0]
+                    print(
+                        "Most recent quarter found in data backup:", most_recent_quarter
+                    )
+            else:
+                most_recent_quarter = self.most_recent_quarter_override
+
+            print(f"Using {most_recent_quarter}")
             csv_files = sorted([f for f in z.namelist() if f.endswith(".csv")])
             pbar = tqdm(total=len(csv_files))
             for filename in csv_files:
@@ -606,7 +691,9 @@ class ProcessZip(BaseModel):
                     z,
                     filename,
                     zip_filename_override=zip_filename_override,
-                    most_recent_quarter_start_dt=self.most_recent_quarter_start_dt,
+                    most_recent_quarter_start_dt=get_quarter_start_date(
+                        most_recent_quarter
+                    ),
                     remap_districts=self.remap_districts,
                 )
                 dfs[table_from_zip.name] = (
@@ -616,4 +703,4 @@ class ProcessZip(BaseModel):
                     .reset_index()
                 )
                 pbar.update()
-        return dfs
+        return dfs, most_recent_quarter
