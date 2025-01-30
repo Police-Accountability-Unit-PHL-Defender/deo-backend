@@ -55,15 +55,16 @@ def hin_map():
     df[" "] = df["on_hin"].apply(
         lambda x: "Traffic stop on the HIN" if x else "Traffic stop not on the HIN"
     )
+    year = ",".join(f"{x}" for x in df["year"].unique())
     fig = px.scatter_mapbox(
         df,
-        lat="point_y",
-        lon="point_x",
+        lat="lat",
+        lon="lng",
         color_discrete_map={True: "green", False: "red"},
         zoom=10,
         mapbox_style="carto-positron",
         color=" ",
-        title="Random Sample of 1,000 PPD Traffic Stops in 2023 Mapped on HIN Roads",
+        title=f"Random Sample of 1,000 PPD Traffic Stops in {year} Mapped on HIN Roads",
     )
     fig.update_mapboxes(
         layers=[
@@ -80,7 +81,7 @@ def hin_map():
     fig.update_layout(
         width=800,
         height=600,
-        mapbox_center={"lat": df["point_y"].mean(), "lon": df["point_x"].mean()},
+        mapbox_center={"lat": df["lat"].mean(), "lon": df["lng"].mean()},
     )
     fig.update_layout(hovermode=False)
 
