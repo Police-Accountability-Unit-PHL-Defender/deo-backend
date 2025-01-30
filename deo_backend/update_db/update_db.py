@@ -116,6 +116,10 @@ def cli(debug, remap_districts, most_recent_quarter_override):
             zip_filename=ZIP_FILENAME,
             data_dir=DATA_DIR,
             most_recent_quarter_override=most_recent_quarter_override,
+            zip_filename_override_dict={
+                # Needed due to the removal of most 2022 mvc_codes in Jan 2025.
+                "car_ped_stops_year_2022.csv": "car_ped_stops_2024-10-24T01_17_41.zip"
+            },
             remap_districts=remap_districts,
         )
         sqlite_file = os.path.join(DATA_DIR, f"open_data_philly_{run.db_name}.db")

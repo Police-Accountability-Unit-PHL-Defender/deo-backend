@@ -155,7 +155,7 @@ class TableFromZip(BaseModel):
         with open(zip_filename, "rb") as file:
             zip_data = file.read()
             with zipfile.ZipFile(io.BytesIO(zip_data), "r") as z:
-                csv_files = self.get_sorted_csvs_from_filenames(z.namelist())
+                csv_files = self.get_sorted_csvs_with_prefix(z.namelist())
                 for available_filename in csv_files:
                     # in case the zip structure changed
                     if os.path.basename(available_filename) == os.path.basename(
@@ -661,7 +661,7 @@ class ProcessZip(BaseModel):
                         f"No unique quarter starts found for tables {tables}"
                     )
                 else:
-                    most_recent_quarter = list(unique_quarters.values())[0]
+                    most_recent_quarter = list(unique_quarters)[0]
                     print(
                         "Most recent quarter found in data backup:", most_recent_quarter
                     )
@@ -675,6 +675,11 @@ class ProcessZip(BaseModel):
                 pbar.set_description(filename)
                 zip_filename_override = self.zip_filename_override_dict.get(
                     os.path.basename(filename)
+                )
+                zip_filename_override = (
+                    os.path.join(self.data_dir, zip_filename_override)
+                    if zip_filename_override
+                    else None
                 )
                 if CarPedStops.filename_prefix in filename:
                     table_from_zip = CarPedStops

@@ -1,4 +1,5 @@
 from fastapi.responses import RedirectResponse
+from models import DEO_YEARS
 from models import MOST_RECENT_QUARTER
 from fastapi import status
 
@@ -46,7 +47,7 @@ def read_main():
 
 @app.get("/settings")
 def settings():
-    return {"mostRecentQuarter": MOST_RECENT_QUARTER}
+    return {"mostRecentQuarter": MOST_RECENT_QUARTER, "deoYears": DEO_YEARS}
 
 
 [app.include_router(router) for router in ROUTERS.values()]
