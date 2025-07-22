@@ -31,7 +31,7 @@ Check the `env.py` file to see the env vars that can be updated without a redepl
 The website currently runs on a copy of the data from Open Data Philly (a zipfile backup that is generated monthly using an odp-data-backups repo).
 
 1. Copy zipfile to the `deo_backend/data` folder.
-2. Update the zip filename and quarter start date env vars in `deo_backend/env.py`
+2. Update the zip filename env var in `deo_backend/env.py`
 3. Execute `poetry run python deo_backend/update_db/update_db.py`
 
 4. Go to render.com and Resume the beta web service. Update the front-end env var MOST_RECENT_QUARTER to the new quarter.

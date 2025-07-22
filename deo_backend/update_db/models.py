@@ -1,21 +1,18 @@
-from pydantic import BaseModel
-from shapely import wkb
-import json
-from rtree import index
-from shapely.geometry import shape
-from collections import defaultdict
-
-from tqdm import tqdm
-
-import zipfile
 import io
+import json
 import os
-
-from datetime import datetime, date
 import sqlite3
-import pandas as pd
+import zipfile
+from collections import defaultdict
+from datetime import date, datetime
 
+import pandas as pd
 import requests
+from pydantic import BaseModel
+from rtree import index
+from shapely import wkb
+from shapely.geometry import shape
+from tqdm import tqdm
 
 
 def get_quarter_start_date(quarter_str):
@@ -227,14 +224,26 @@ class TableFromZip(BaseModel):
                             # 061 got directly mapped to 092
                             psa = "2"
                         else:
-                            point = wkb.loads(row.the_geom, hex=True)
-                            psa = find_new_psa(point)
+                            if row.the_geom is not None and pd.notna(row.the_geom):
+                                point = wkb.loads(row.the_geom, hex=True)
+                                psa = find_new_psa(point)
+                            else:
+                                # If there is no geometry, we can't find a PSA.
+                                # This may mess up the math.
+                                psa = None
                     else:
                         psa = row.psa
                     psas.append(psa)
 
                 this_df = this_df.rename(columns={self.psa_col: f"old_{self.psa_col}"})
                 this_df[self.psa_col] = psas
+                n_unknown_geometry = this_df[self.psa_col].isna().sum()
+                n_total = this_df.shape[0]
+                percent_unknown_geometry = n_unknown_geometry/float(n_total)
+                if percent_unknown_geometry > 0:
+                    print(
+                        f"Percent of Unknown Geometry for {self.name}: {percent_unknown_geometry:.2f}% ({n_unknown_geometry}/{n_total})"
+                    )
 
         this_df.to_sql(self.name, if_exists="replace", con=con)
 
