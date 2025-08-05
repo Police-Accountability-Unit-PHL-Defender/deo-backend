@@ -129,12 +129,13 @@ class Endpoint:
 
             x_axis_name = fig.layout.xaxis.title.text
             y_axis_name = fig.layout.yaxis.title.text
-            n_annotations = len(fig.layout.annotations)
+            annotations = list(fig.layout.annotations)
 
             fig_data = []
             fig_trendlines = []
 
             for i, this_fig_data in enumerate(fig.data):
+                i2 = 0
                 for x_val, y_val, custom_data in zip(
                     this_fig_data.x,
                     this_fig_data.y,
@@ -159,8 +160,8 @@ class Endpoint:
                                 "group": this_fig_data["name"] or None,
                                 x_axis_name: convert(x_val),
                                 y_axis_name: convert(y_val),
-                                "annotation": list(fig.layout.annotations)[i].text
-                                if n_annotations
+                                "annotation": annotations[i2].text
+                                if annotations
                                 else None,
                                 "hover_text": this_fig_data["hovertemplate"]
                                 .replace("%{", "{")
@@ -176,6 +177,7 @@ class Endpoint:
                                 .split("<br>"),
                             }
                         )
+                    i2 += 1
             figures[fig_name] = {
                 "properties": {
                     "xAxis": x_axis_name,
