@@ -126,7 +126,7 @@ def api_func(
         },
     )
     for trace in fig.data:
-        trace.hovertemplate = "%{x}<br>%{y:,} " + police_action.noun
+        trace.hovertemplate = "District %{x}<br>%{y:,} " + police_action.noun
     return endpoint.output(
         fig_barplot=fig,
     )

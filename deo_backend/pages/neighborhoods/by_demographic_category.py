@@ -295,8 +295,8 @@ def api_func(
     # Create the bar chart using Plotly Express
     # Calculate percentage difference from the average
     df_percent_action_by_demo["percentage_found"] = (
-        100 - df_percent_action_by_demo["percentage"]
-    ).round(1)
+        (100 - df_percent_action_by_demo["percentage"]).round(1).fillna(0)
+    )
 
     baseline_percentage = df_percent_action_by_demo[
         df_percent_action_by_demo[demographic_category] == demographic_baseline
