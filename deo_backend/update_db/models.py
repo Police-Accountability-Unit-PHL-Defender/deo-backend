@@ -239,7 +239,7 @@ class TableFromZip(BaseModel):
                 this_df[self.psa_col] = psas
                 n_unknown_geometry = this_df[self.psa_col].isna().sum()
                 n_total = this_df.shape[0]
-                percent_unknown_geometry = n_unknown_geometry/float(n_total)
+                percent_unknown_geometry = n_unknown_geometry / float(n_total) * 100
                 if percent_unknown_geometry > 0:
                     print(
                         f"Percent of Unknown Geometry for {self.name}: {percent_unknown_geometry:.2f}% ({n_unknown_geometry}/{n_total})"

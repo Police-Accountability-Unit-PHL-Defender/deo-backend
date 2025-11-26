@@ -3,7 +3,7 @@ import os
 """
 These are the two variables that you must update when you are updating the database.
 """
-ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2025-07-21T23_54_37.zip")
+ZIP_FILENAME = os.environ.get("ZIP_FILENAME", "car_ped_stops_2025-11-01T02_04_02.zip").replace(":","_")
 
 
 def find_project_root(current_path):
