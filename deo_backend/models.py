@@ -1,16 +1,16 @@
-from pydantic import BaseModel
 import json
-import numpy as np
 import os
 import sqlite3
-from datetime import date
-import pandas as pd
-from datetime import datetime
-from enum import Enum
-from enum import auto
+from datetime import date, datetime
+from enum import Enum, auto
 from functools import lru_cache
-import deo_backend
+
+import numpy as np
+import pandas as pd
 from env import DB_FILENAME
+from pydantic import BaseModel
+
+import deo_backend
 
 DATA_DIR = os.path.dirname(deo_backend.__file__)
 
@@ -113,11 +113,16 @@ def df_raw_by_hin():
 
 
 @lru_cache
-def hin_geojson():
+def hin_geojson_2020():
     DATA_DIR = os.path.dirname(deo_backend.__file__)
     print("Loading hin geojson")
-    return json.load(open(os.path.join(DATA_DIR, "hin.geojson")))
+    return json.load(open(os.path.join(DATA_DIR, "maps", "hin_2020.geojson")))
 
+@lru_cache
+def hin_geojson_2025():
+    DATA_DIR = os.path.dirname(deo_backend.__file__)
+    print("Loading hin geojson")
+    return json.load(open(os.path.join(DATA_DIR, "maps", "hin_2025.geojson")))
 
 @lru_cache
 def df_raw():
