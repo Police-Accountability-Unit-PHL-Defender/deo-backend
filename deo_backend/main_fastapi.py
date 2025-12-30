@@ -23,6 +23,7 @@ origins = [
     "https://deo-api.onrender.com",
     "http://localhost:10000",
     "http://localhost:3000",
+    "http://localhost:3002",
     "https://deo-web-dashboard-beta.vercel.app",
     os.environ.get("FRONTEND_SERVER"),
 ]
