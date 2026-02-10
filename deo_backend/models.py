@@ -95,13 +95,10 @@ def police_districts_geojson():
 @lru_cache
 def hin_sample_locations_df():
     print(f"SQLITE: {SQLITE_FILE} hin sample locations")
-    df = pd.read_csv(os.path.join(DATA_DIR, "data/car_ped_stops_hin_random_sample.csv"))
-    '''
     df = pd.read_sql(
         "select * from car_ped_stops_hin_random_sample",
         sqlite3.connect(SQLITE_FILE),
     )
-    '''
     return df
 
 
