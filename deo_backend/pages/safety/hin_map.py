@@ -31,10 +31,10 @@ router = ROUTERS[prefixes[0]]
 
 
 def hin_map_2025():
-    df = hin_sample_locations_df()[:10]
+    df = hin_sample_locations_df()
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    df[" "] = df["on_hin"].apply(
-        lambda x: "Traffic stop on the HIN" if x is True else "Traffic stop not on the HIN"
+    df["hover_text"] = df["on_hin"].apply(
+        lambda x: "Traffic stop on the HIN" if bool(x) is True else "Traffic stop not on the HIN"
     )
     year = ",".join(f"{x}" for x in df["year"].unique())
     fig = px.scatter_mapbox(
@@ -45,14 +45,19 @@ def hin_map_2025():
         mapbox_style="carto-positron",
         title=f"Random Sample of 1,000 PPD Traffic Stops in {year} Mapped on HIN Roads",
     )
-    hover_cols = ["stname", "stops_objectid", "nearest_objectid", "distance_from_hin", "on_hin", "location", "lat", "lng"]
+    hover_cols = [
+        "hover_text",
+        "stops_objectid",
+        "location",
+        "stname",
+    ]
     fig.update_traces(
         marker_color=df["on_hin"].map({True: "green", False: "red"}),
         customdata=df[hover_cols].values,
         hovertemplate=(
-            "stname: %{customdata[0]}<br>stops_objectid: %{customdata[1]}<br>nearest_objectid: %{customdata[2]}<br>"
-            "distance from HIN: %{customdata[3]}<br>on HIN: %{customdata[4]}<br>location: %{customdata[5]}<br>"
-            "lat: %{customdata[6]}<br>lng: %{customdata[7]}<extra></extra>"
+            "%{customdata[0]}<br>"
+            "location: %{customdata[4]}<br>"
+            "stname: %{customdata[8]}<br>"
         ),
         showlegend=False,
     )
@@ -65,7 +70,7 @@ def hin_map_2025():
                 "below": "",
                 "color": "red",
             }
-            for feature in hin_geojson_2025()["features"][:1]
+            for feature in hin_geojson_2025()["features"]
         ]
     )
     fig.update_layout(
