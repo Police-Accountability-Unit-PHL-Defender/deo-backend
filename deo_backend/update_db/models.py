@@ -128,7 +128,7 @@ class TableFromZip(BaseModel):
     district_col: str = "districtoccur"
     psa_col: str | None = "psa"
     processing_query: str
-    regroupby_cols: list[str]
+    regroupby_cols: list[str] | None
 
     @property
     def filename_prefix(self):
@@ -604,6 +604,7 @@ Shootings = TableFromZip(
 )
 
 
+
 class ProcessZip(BaseModel):
     data_dir: str
     zip_filename: str
@@ -690,6 +691,14 @@ class ProcessZip(BaseModel):
                     if zip_filename_override
                     else None
                 )
+                if "csvs/car_ped_stops_hin_random_sample" in filename:
+                    # We now do the random sampling as part of the backup.
+                    # 2026-02-17T19_17_11.zip is the first to have it.
+                    # If debugging, you might need to just use the file in the data dir.
+                    with z.open(filename) as csv_file:
+                        dfs['car_ped_stops_hin_random_sample'] = pd.read_csv(csv_file)
+                    continue
+
                 if CarPedStops.filename_prefix in filename:
                     table_from_zip = CarPedStops
                 elif CarPedStopsOnHin.filename_prefix in filename:
