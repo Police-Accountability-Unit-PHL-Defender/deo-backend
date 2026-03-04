@@ -1,14 +1,14 @@
-from dash import dcc
-import pandas as pd
-from plotly.graph_objs import Scatter
-from flask import request
-from typing import Annotated
-from fastapi import Query
-import numpy as np
-import urllib.parse
 import os
+import urllib.parse
+from typing import Annotated
 
+import numpy as np
+import pandas as pd
+from dash import dcc
+from fastapi import Query
+from flask import request
 from models import DemographicCategory
+from plotly.graph_objs import Scatter
 
 API_DOMAIN = os.environ.get("API_DOMAIN", "http://0.0.0.0:8123")
 
@@ -106,22 +106,25 @@ class Endpoint:
                         # Used by Comparison by District Maps
                         geojson["features"].extend(map_data.geojson["features"])
                     elif map_data.subplot == "mapbox":
-                        # Used by the HIN Plotly Points
-                        geojson["features"].extend(
-                            [
+                        lats = map_data["lat"]
+                        lons = map_data["lon"]
+                        customdata = getattr(map_data, "customdata", None)
+                        for i, (lat, lon) in enumerate(zip(lats, lons)):
+                            row = customdata[i] if customdata is not None and i < len(customdata) else None
+                            hover_text = row[0] if row is not None and len(row) else (map_data["name"] or "")
+                            geojson["features"].append(
                                 {
                                     "type": "Feature",
                                     "properties": {
-                                        "name": map_data["name"],
+                                        "name": map_data["name"] or hover_text,
+                                        "hover_text": hover_text,
                                     },
                                     "geometry": {
                                         "type": "Point",
                                         "coordinates": [lon, lat],
                                     },
                                 }
-                                for lat, lon in zip(map_data["lat"], map_data["lon"])
-                            ]
-                        )
+                            )
                     geojsons.append(geojson)
         for fig_key in [kw for kw in kwargs if kw.startswith("fig_")]:
             fig_name = fig_key[len("fig_") :]

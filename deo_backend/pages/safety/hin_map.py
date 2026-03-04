@@ -9,6 +9,7 @@ import dash_ag_grid as dag
 import fastapi
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from dash import Dash, Input, Output, callback, dcc, html
 from dash_helpers import (ActionWordType, Subtitle, TimeAggregationChoice,
                           demographic_dropdown, location_dropdown,
@@ -29,60 +30,36 @@ API_URL = f"/{prefixes[0]}/{prefix}"
 router = ROUTERS[prefixes[0]]
 
 
-def hin_map():
-    df = hin_sample_locations_df()
-    endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    df[" "] = df["on_hin"].apply(
-        lambda x: "Traffic stop on the HIN" if x else "Traffic stop not on the HIN"
-    )
-    year = ",".join(f"{x}" for x in df["year"].unique())
-    fig = px.scatter_mapbox(
-        df,
-        lat="lat",
-        lon="lng",
-        color_discrete_map={True: "green", False: "red"},
-        zoom=10,
-        mapbox_style="carto-positron",
-        color=" ",
-        title=f"Random Sample of 1,000 PPD Traffic Stops in {year} Mapped on HIN Roads",
-    )
-    fig.update_mapboxes(
-        layers=[
-            {
-                "source": feature,
-                "type": "line",
-                "line": {"width": 2},
-                "below": "",
-                "color": "black",
-            }
-            for feature in hin_geojson_2020()["features"]
-        ]
-    )
-    fig.update_layout(
-        width=800,
-        height=600,
-        mapbox_center={"lat": df["lat"].median(), "lon": df["lng"].median()},
-    )
-    fig.update_layout(hovermode=False)
-
-    return fig
-
 def hin_map_2025():
     df = hin_sample_locations_df()
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    df[" "] = df["on_hin"].apply(
-        lambda x: "Traffic stop on the HIN" if x else "Traffic stop not on the HIN"
+    df["hover_text"] = df["on_hin"].apply(
+        lambda x: "Traffic stop on the HIN" if bool(x) is True else "Traffic stop not on the HIN"
     )
     year = ",".join(f"{x}" for x in df["year"].unique())
     fig = px.scatter_mapbox(
         df,
         lat="lat",
         lon="lng",
-        color_discrete_map={True: "green", False: "red"},
         zoom=10,
         mapbox_style="carto-positron",
-        color=" ",
         title=f"Random Sample of 1,000 PPD Traffic Stops in {year} Mapped on HIN Roads",
+    )
+    hover_cols = [
+        "hover_text",
+        "stops_objectid",
+        "location",
+        "stname",
+    ]
+    fig.update_traces(
+        marker_color=df["on_hin"].map({True: "green", False: "red"}),
+        customdata=df[hover_cols].values,
+        hovertemplate=(
+            "%{customdata[0]}<br>"
+            "location: %{customdata[4]}<br>"
+            "stname: %{customdata[8]}<br>"
+        ),
+        showlegend=False,
     )
     fig.update_mapboxes(
         layers=[
@@ -91,7 +68,7 @@ def hin_map_2025():
                 "type": "line",
                 "line": {"width": 2},
                 "below": "",
-                "color": "black",
+                "color": "red",
             }
             for feature in hin_geojson_2025()["features"]
         ]
@@ -101,14 +78,14 @@ def hin_map_2025():
         height=600,
         mapbox_center={"lat": df["lat"].median(), "lon": df["lng"].median()},
     )
-    fig.update_layout(hovermode=False)
+    fig.update_layout(hovermode='closest')
 
     return fig
 
 @router.get(API_URL)
 def api_func():
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    map_hin = hin_map()
+    map_hin = hin_map_2025()
     return endpoint.output(
         map_hin=map_hin,
     )
@@ -116,11 +93,9 @@ def api_func():
 
 def hin_map_layout():
     endpoint = Endpoint(api_route=API_URL, inputs=locals())
-    map_hin = hin_map()
     map_hin_2025 = hin_map_2025()
     return [
         html.A("**API FOR THIS QUESTION**:", href=endpoint.full_api_route),
-        dcc.Graph(figure=map_hin),
         dcc.Graph(figure=map_hin_2025),
     ]
 
