@@ -1,40 +1,25 @@
-from dash import Dash, html, dcc, callback, Output, Input, no_update
-from models import TimeAggregation
-from models import QuarterHow
-import numpy as np
-import uuid
-from typing import Literal
-from typing import Annotated
-import fastapi
-import dash_ag_grid as dag
-from datetime import date
-from datetime import timedelta
-from datetime import datetime
-import plotly.express as px
-import pandas as pd
-import sqlite3
-
-from models import PoliceAction
-from models import AgeGroup
-from models import DemographicCategory
-from models import GenderGroup
-from models import RacialGroup
-from models import Geography
-from models import FilteredDf
-from models import QUARTERS, MOST_RECENT_QUARTER, SEASON_QUARTER_MAPPING, FIRST_QUARTER
-from models import Quarter
-from fastapi_models import Endpoint, location_annotation, quarter_annotation
-from dash_helpers import (
-    location_dropdown,
-    qyear_dropdown,
-    demographic_dropdown,
-    Subtitle,
-    TimeAggregationChoice,
-)
 import os
+import sqlite3
+import uuid
+from datetime import date, datetime, timedelta
+from enum import Enum, auto
+from typing import Annotated, Literal
 
+import dash_ag_grid as dag
+import fastapi
+import numpy as np
+import pandas as pd
+import plotly.express as px
+from dash import Dash, Input, Output, callback, dcc, html, no_update
+from dash_helpers import (Subtitle, TimeAggregationChoice,
+                          demographic_dropdown, location_dropdown,
+                          qyear_dropdown)
 from fastapi import APIRouter, Query
-from enum import auto, Enum
+from fastapi_models import Endpoint, location_annotation, quarter_annotation
+from models import (FIRST_QUARTER, MOST_RECENT_QUARTER, QUARTERS,
+                    SEASON_QUARTER_MAPPING, AgeGroup, DemographicCategory,
+                    FilteredDf, GenderGroup, Geography, PoliceAction, Quarter,
+                    QuarterHow, RacialGroup, TimeAggregation)
 from routers import ROUTERS
 
 prefixes = __name__.split(".")[-2:]
@@ -190,7 +175,7 @@ def api_func(
         elif pd.isna(row[column]):
             text = "0.0x of Baseline"
         elif np.isinf(row[column]):
-            text = "More than baseline"
+            text = "Above baseline"
         else:
             text = f"{val_text} of Baseline"
         return text
@@ -249,7 +234,7 @@ def api_func(
     df_percent_action_by_demo[f"{police_action.sql_column}_no_contraband"] = (
         df_percent_action_by_demo[police_action.sql_column]
         - df_percent_action_by_demo["n_contraband"]
-    )
+    ).clip(lower=0)
     df_percent_action_by_demo[demographic_category] = pd.Categorical(
         df_percent_action_by_demo[demographic_category],
         DemographicCategory(demographic_category).order_of_group,
