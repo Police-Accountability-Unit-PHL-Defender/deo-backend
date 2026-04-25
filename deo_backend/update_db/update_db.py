@@ -45,8 +45,7 @@ def make_db(df_tables, sqlite_file, most_recent_quarter):
     df_quarterly = add_quarterly_columns(df_quarterly)
     df_quarterly_reason = add_quarterly_columns(df_quarterly_reason)
     print("Pulling from HIN")
-    # df_hin = get_hin_random_sample_from_odp()
-    df_hin = pd.read_csv(os.path.join(DATA_DIR, "car_ped_stops_hin_random_sample.csv"))
+    df_hin = df_tables["car_ped_stops_hin_random_sample"]
     # df_hin_by_quarter = get_hin_by_quarter_from_odp()
     df_hin_by_quarter = df_tables["car_ped_stops_on_hin"]
     df_hin_by_quarter = add_quarterly_columns(df_hin_by_quarter)
