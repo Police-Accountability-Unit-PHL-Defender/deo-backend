@@ -2,7 +2,7 @@ services:
   - type: web
     name: deo-api
     runtime: python
-    buildCommand: "poetry install"
+    buildCommand: "poetry install && python download_db_for_render.py"
     startCommand: "poetry run python deo_backend/main.py"
     envVars:
       - key: PYTHON_VERSION
