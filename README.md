@@ -20,6 +20,7 @@ You need to have [poetry](https://pypi.org/project/poetry/) installed. You can d
 
 ```
 poetry install
+python download_db_for_render.py
 poetry run python deo_backend/main.py
 poetry run python deo_backend/main_fastapi.py
 ```
